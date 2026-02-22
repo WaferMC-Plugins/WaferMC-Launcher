@@ -1,8 +1,8 @@
-# WaferMC Launcher
-
 <p align="center">
   <img src="./app/assets/images/WaferMCLogo.png" alt="WaferMC Logo" width="240">
 </p>
+
+<h1 align="center">WaferMC Launcher</h1>
 
 <p align="center">
   Il launcher ufficiale di WaferMC per entrare subito nel server con client gia pronto, mod corrette e aggiornamenti automatici.
@@ -31,6 +31,24 @@
 - Verifica file all'avvio per ridurre errori e mismatch.
 - Aggiornamenti automatici del launcher.
 - Accesso account Microsoft integrato.
+
+## Screenshot
+
+| Home | Login |
+| --- | --- |
+| ![Home launcher](./docs/images/home.png) | ![Login options](./docs/images/login-options.png) |
+
+| Account | Mod |
+| --- | --- |
+| ![Impostazioni account](./docs/images/settings-account.png) | ![Impostazioni mod](./docs/images/settings-mod.png) |
+
+| Java | Launcher |
+| --- | --- |
+| ![Impostazioni Java](./docs/images/settings-java.png) | ![Impostazioni launcher](./docs/images/settings-launcher.png) |
+
+| Info | Aggiornamenti |
+| --- | --- |
+| ![Pagina info](./docs/images/settings-info.png) | ![Pagina aggiornamenti](./docs/images/settings-updates.png) |
 
 ## Installazione rapida
 
