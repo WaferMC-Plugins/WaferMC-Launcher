@@ -648,11 +648,11 @@ function populateAuthAccounts(){
             : `https://visage.surgeplay.com/front/128/${resolvedUUID}?cb=${cacheBuster}`
         const finalFallbackSkinURL = resolvedUUID.length > 0
             ? `https://visage.surgeplay.com/front/128/${resolvedUUID}?cb=${cacheBuster}`
-            : 'assets/images/SealCircle.png'
+            : 'assets/images/WaferMCLogo.png'
 
         const accHtml = `<div class="settingsAuthAccount" uuid="${acc.uuid}">
             <div class="settingsAuthAccountLeft">
-                <img class="settingsAuthAccountImage" alt="${acc.displayName}" src="${primarySkinURL}" onerror="if(!this.dataset.fallback1){this.dataset.fallback1='1';this.src='${fallbackSkinURL}';}else if(!this.dataset.fallback2){this.dataset.fallback2='1';this.src='${finalFallbackSkinURL}';}else{this.onerror=null;this.src='assets/images/SealCircle.png';}">
+                <img class="settingsAuthAccountImage" alt="${acc.displayName}" src="${primarySkinURL}" onerror="if(!this.dataset.fallback1){this.dataset.fallback1='1';this.src='${fallbackSkinURL}';}else if(!this.dataset.fallback2){this.dataset.fallback2='1';this.src='${finalFallbackSkinURL}';}else{this.onerror=null;this.src='assets/images/WaferMCLogo.png';}">
             </div>
             <div class="settingsAuthAccountRight">
                 <div class="settingsAuthAccountDetails">

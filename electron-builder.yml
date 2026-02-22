@@ -15,6 +15,7 @@ extraResources:
 
 # Windows Configuration
 win: 
+  icon: 'build/icon.ico'
   target: 
     - target: 'nsis'
       arch: 'x64'
@@ -25,6 +26,9 @@ nsis:
   perMachine: false
   allowElevation: true
   allowToChangeInstallationDirectory: true
+  installerIcon: 'build/icon.ico'
+  uninstallerIcon: 'build/icon.ico'
+  installerHeaderIcon: 'build/icon.ico'
 
 # macOS Configuration
 mac:

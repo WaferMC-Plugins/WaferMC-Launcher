@@ -2,7 +2,7 @@ const remoteMain = require('@electron/remote/main')
 remoteMain.initialize()
 
 // Requirements
-const { app, BrowserWindow, ipcMain, Menu, shell } = require('electron')
+const { app, BrowserWindow, ipcMain, Menu, shell, nativeImage } = require('electron')
 const autoUpdater                       = require('electron-updater').autoUpdater
 const ejse                              = require('ejs-electron')
 const fs                                = require('fs')
@@ -12,6 +12,7 @@ const semver                            = require('semver')
 const { pathToFileURL }                 = require('url')
 const { AZURE_CLIENT_ID, MSFT_OPCODE, MSFT_REPLY_TYPE, MSFT_ERROR, SHELL_OPCODE } = require('./app/assets/js/ipcconstants')
 const LangLoader                        = require('./app/assets/js/langloader')
+const WINDOWS_APP_USER_MODEL_ID         = 'com.wafermc.launcher'
 
 // Setup Lang
 LangLoader.setupLanguage()
@@ -107,6 +108,9 @@ ipcMain.handle(SHELL_OPCODE.TRASH_ITEM, async (event, ...args) => {
 // Disable hardware acceleration.
 // https://electronjs.org/docs/tutorial/offscreen-rendering
 app.disableHardwareAcceleration()
+if(process.platform === 'win32'){
+    app.setAppUserModelId(WINDOWS_APP_USER_MODEL_ID)
+}
 
 
 const REDIRECT_URI_PREFIX = 'https://login.microsoftonline.com/common/oauth2/nativeclient?'
@@ -130,7 +134,7 @@ ipcMain.on(MSFT_OPCODE.OPEN_LOGIN, (ipcEvent, ...arguments_) => {
         width: 520,
         height: 600,
         frame: true,
-        icon: getPlatformIcon('SealCircle')
+        icon: getPlatformIcon('WaferMCLogo')
     })
 
     msftAuthWindow.on('closed', () => {
@@ -181,7 +185,7 @@ ipcMain.on(MSFT_OPCODE.OPEN_LOGOUT, (ipcEvent, uuid, isLastAccount) => {
         width: 520,
         height: 600,
         frame: true,
-        icon: getPlatformIcon('SealCircle')
+        icon: getPlatformIcon('WaferMCLogo')
     })
 
     msftLogoutWindow.on('closed', () => {
@@ -231,7 +235,7 @@ function createWindow() {
         minHeight: 552,
         maxWidth: 980,
         maxHeight: 552,
-        icon: getPlatformIcon('SealCircle'),
+        icon: getPlatformIcon('WaferMCLogo'),
         frame: false,
         resizable: false,
         maximizable: false,
@@ -244,6 +248,9 @@ function createWindow() {
         backgroundColor: '#171614'
     })
     remoteMain.enable(win.webContents)
+    if(process.platform === 'win32'){
+        win.setIcon(nativeImage.createFromPath(path.join(__dirname, 'app', 'assets', 'images', 'WaferMCLogo.png')))
+    }
 
     const backgroundsDir = path.join(__dirname, 'app', 'assets', 'images', 'backgrounds')
     const requestedBackgrounds = ['requested_bg_0.png', 'requested_bg_1.png']
