@@ -16,7 +16,7 @@
             "description": "Main WesterosCraft server. Connect to enter the Realm.",
             "icon": "http://mc.westeroscraft.com/WesterosCraftLauncher/files/server-prod.png",
             "version": "3.9.4",
-            "address": "mc.westeroscraft.com",
+            "address": "play.wafermc.it",
             "minecraftVersion": "1.11.2",
             "discord": {
                 "shortId": "Production",
@@ -430,7 +430,7 @@
             "description": "Main testing server. Experimental changes are live here.",
             "icon": "http://mc.westeroscraft.com/WesterosCraftLauncher/files/server-test.png",
             "version": "3.9.4",
-            "address": "mc.westeroscraft.com:4444",
+            "address": "play.wafermc.it",
             "minecraftVersion": "1.11.2",
             "discord": {
                 "shortId": "Test Server",
@@ -844,7 +844,7 @@
             "description": "Tests for our version change to 1.12.2 are live here.",
             "icon": "http://mc.westeroscraft.com/WesterosCraftLauncher/files/server-test.png",
             "version": "4.2.1",
-            "address": "mc.westeroscraft.com:4445",
+            "address": "play.wafermc.it",
             "minecraftVersion": "1.12.2",
             "discord": {
                 "shortId": "1.12.2 Test Server",
@@ -1275,7 +1275,7 @@
             "description": "Tests for our version change to 1.13.2 are live here.",
             "icon": "http://mc.westeroscraft.com/WesterosCraftLauncher/files/server-test.png",
             "version": "5.0.0",
-            "address": "mc.westeroscraft.com:4445",
+            "address": "play.wafermc.it",
             "minecraftVersion": "1.13.2",
             "discord": {
                 "shortId": "1.13.2 Test Server",

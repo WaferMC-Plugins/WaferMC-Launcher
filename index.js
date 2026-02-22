@@ -227,8 +227,15 @@ function createWindow() {
     win = new BrowserWindow({
         width: 980,
         height: 552,
+        minWidth: 980,
+        minHeight: 552,
+        maxWidth: 980,
+        maxHeight: 552,
         icon: getPlatformIcon('SealCircle'),
         frame: false,
+        resizable: false,
+        maximizable: false,
+        fullscreenable: false,
         webPreferences: {
             preload: path.join(__dirname, 'app', 'assets', 'js', 'preloader.js'),
             nodeIntegration: true,
@@ -238,8 +245,15 @@ function createWindow() {
     })
     remoteMain.enable(win.webContents)
 
+    const backgroundsDir = path.join(__dirname, 'app', 'assets', 'images', 'backgrounds')
+    const requestedBackgrounds = ['requested_bg_0.png', 'requested_bg_1.png']
+    const defaultBackgrounds = fs.readdirSync(backgroundsDir).filter((file) => /\.(png|jpe?g)$/i.test(file))
+    const availableRequestedBackgrounds = requestedBackgrounds.filter((file) => fs.existsSync(path.join(backgroundsDir, file)))
+    const backgroundPool = availableRequestedBackgrounds.length > 0 ? availableRequestedBackgrounds : defaultBackgrounds
+    const selectedBackground = backgroundPool.length > 0 ? backgroundPool[Math.floor(Math.random() * backgroundPool.length)] : '0.jpg'
+
     const data = {
-        bkid: Math.floor((Math.random() * fs.readdirSync(path.join(__dirname, 'app', 'assets', 'images', 'backgrounds')).length)),
+        bgimg: selectedBackground,
         lang: (str, placeHolders) => LangLoader.queryEJS(str, placeHolders)
     }
     Object.entries(data).forEach(([key, val]) => ejse.data(key, val))
@@ -251,8 +265,6 @@ function createWindow() {
     })*/
 
     win.removeMenu()
-
-    win.resizable = true
 
     win.on('closed', () => {
         win = null

@@ -1,20 +1,22 @@
 # Custom Language File for Launcher Customizer
 
 [ejs.app]
-title = "Helios Launcher"
+title = "WaferMC Launcher"
 
 [ejs.landing]
-mediaGitHubURL = "https://github.com/dscalzi/HeliosLauncher"
-mediaXURL = "#"
-mediaInstagramURL = "#"
-mediaYouTubeURL = "#"
-mediaDiscordURL = "https://discord.gg/zNWUXdt"
+mediaGitHubURL = "https://www.wafermc.it"
+mediaTwitchURL = "https://twitch.wafermc.it"
+mediaInstagramURL = "https://www.instagram.com/propriowafer/"
+mediaYouTubeURL = "https://www.youtube.com/@propriowafer"
+mediaDiscordURL = "https://discord.wafermc.it"
 
 [ejs.settings]
-sourceGithubLink = "https://github.com/dscalZi/HeliosLauncher"
-supportLink = "https://github.com/dscalZi/HeliosLauncher/issues"
+sourceGithub = "Sito Web"
+sourceGithubLink = "https://www.wafermc.it"
+support = "Discord"
+supportLink = "https://discord.wafermc.it"
 
 [ejs.welcome]
-welcomeHeader = "WELCOME TO WESTEROSCRAFT"
-welcomeDescription = "Our mission is to recreate the universe imagined by author George RR Martin in his fantasy series, A Song of Ice and Fire.  Through the collaborative effort of thousands of community members, we have sought to create Westeros as accurately and precisely as possible within Minecraft.  The world we are creating is yours to explore.  Journey from Dorne to Castle Black, and if you aren’t afraid, beyond the Wall itself, but best not delay.  As the words of House Stark ominously warn: Winter is Coming."
-welcomeDescCTA = "You are just a few clicks away from Westeros."
+welcomeHeader = "BENVENUTO SU WESTEROSCRAFT"
+welcomeDescription = "La nostra missione e ricreare l'universo immaginato dall'autore George RR Martin nella sua serie fantasy, A Song of Ice and Fire. Attraverso lo sforzo collaborativo di migliaia di membri della community, abbiamo cercato di creare Westeros nel modo piu accurato e preciso possibile dentro Minecraft. Il mondo che stiamo creando e tuo da esplorare. Viaggia da Dorne a Castle Black e, se non hai paura, anche oltre la Barriera, ma non aspettare troppo. Come avverte in modo inquietante il motto di Casa Stark: Winter is Coming."
+welcomeDescCTA = "Ti separano solo pochi clic da Westeros."

@@ -304,8 +304,11 @@ function populateAccountListings(){
     const accounts = Array.from(Object.keys(accountsObj), v=>accountsObj[v])
     let htmlString = ''
     for(let i=0; i<accounts.length; i++){
+        const resolvedUUID = accounts[i].uuid != null ? accounts[i].uuid.replace(/-/g, '').trim() : ''
+        const primarySkinURL = `https://mc-heads.net/head/${resolvedUUID}/40`
+        const fallbackSkinURL = `https://crafatar.com/avatars/${resolvedUUID}?overlay=true&size=40`
         htmlString += `<button class="accountListing" uuid="${accounts[i].uuid}" ${i===0 ? 'selected' : ''}>
-            <img src="https://mc-heads.net/head/${accounts[i].uuid}/40">
+            <img src="${primarySkinURL}" onerror="this.onerror=null;this.src='${fallbackSkinURL}'">
             <div class="accountListingName">${accounts[i].displayName}</div>
         </button>`
     }

@@ -42,6 +42,62 @@ const user_text               = document.getElementById('user_text')
 
 const loggerLanding = LoggerUtil.getLogger('Landing')
 
+/**
+ * Normalize UUID values for skin endpoints.
+ *
+ * @param {string} uuid
+ * @returns {string}
+ */
+function normalizeUUID(uuid){
+    return uuid != null ? uuid.replace(/-/g, '').trim() : ''
+}
+
+/**
+ * Load the first valid image URL from the provided candidates.
+ *
+ * @param {string[]} urls
+ * @returns {Promise<string | null>}
+ */
+function loadFirstImage(urls){
+    return new Promise((resolve) => {
+        const attempt = (idx) => {
+            if(idx >= urls.length){
+                resolve(null)
+                return
+            }
+
+            const img = new Image()
+            img.onload = () => resolve(urls[idx])
+            img.onerror = () => attempt(idx + 1)
+            img.src = urls[idx]
+        }
+        attempt(0)
+    })
+}
+
+/**
+ * Resolve and set the selected account avatar with fallback providers.
+ *
+ * @param {string} uuid
+ */
+function setSelectedAccountAvatar(uuid){
+    const avatarContainer = document.getElementById('avatarContainer')
+    const resolvedUUID = normalizeUUID(uuid)
+    if(resolvedUUID.length === 0){
+        avatarContainer.style.backgroundImage = 'none'
+        return
+    }
+
+    const avatarCandidates = [
+        `https://mc-heads.net/avatar/${resolvedUUID}/128`,
+        `https://crafatar.com/avatars/${resolvedUUID}?overlay=true&size=128`
+    ]
+
+    loadFirstImage(avatarCandidates).then((resolvedURL) => {
+        avatarContainer.style.backgroundImage = resolvedURL != null ? `url('${resolvedURL}')` : 'none'
+    })
+}
+
 /* Launch Progress Wrapper Functions */
 
 /**
@@ -149,8 +205,12 @@ function updateSelectedAccount(authUser){
             username = authUser.displayName
         }
         if(authUser.uuid != null){
-            document.getElementById('avatarContainer').style.backgroundImage = `url('https://mc-heads.net/body/${authUser.uuid}/right')`
+            setSelectedAccountAvatar(authUser.uuid)
+        } else {
+            setSelectedAccountAvatar(null)
         }
+    } else {
+        setSelectedAccountAvatar(null)
     }
     user_text.innerHTML = username
 }
@@ -937,7 +997,7 @@ document.addEventListener('keydown', (e) => {
 function displayArticle(articleObject, index){
     newsArticleTitle.innerHTML = articleObject.title
     newsArticleTitle.href = articleObject.link
-    newsArticleAuthor.innerHTML = 'by ' + articleObject.author
+    newsArticleAuthor.innerHTML = `${Lang.queryJS('landing.news.by')} ${articleObject.author}`
     newsArticleDate.innerHTML = articleObject.date
     newsArticleComments.innerHTML = articleObject.comments
     newsArticleComments.href = articleObject.commentsLink

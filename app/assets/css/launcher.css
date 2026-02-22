@@ -1570,6 +1570,7 @@ input:checked + .toggleSwitchSlider:before {
 .settingsAuthAccountRight {
     display: flex;
     width: 100%;
+    min-width: 0;
 }
 
 /* Account details container. */
@@ -1579,6 +1580,7 @@ input:checked + .toggleSwitchSlider:before {
     justify-content: center;
     margin-left: 20px;
     width: 100%;
+    min-width: 0;
 }
 .settingsAuthAccountDetails > *:not(:last-child) {
     margin-bottom: 20px;
@@ -1598,6 +1600,7 @@ input:checked + .toggleSwitchSlider:before {
 .settingsAuthAccountDetailValue {
     font-size: 14px;
     -webkit-user-select: initial;
+    overflow-wrap: anywhere;
 }
 
 /* Account actions container. */
@@ -1606,6 +1609,8 @@ input:checked + .toggleSwitchSlider:before {
     flex-direction: column;
     justify-content: space-between;
     align-items: flex-end;
+    min-width: 170px;
+    gap: 10px;
     padding: 10px;
 }
 
@@ -1616,6 +1621,8 @@ input:checked + .toggleSwitchSlider:before {
     white-space: nowrap;
     background: none;
     font-family: 'Avenir Medium';
+    text-align: right;
+    line-height: 1.25;
     outline: none;
     transition: 0.25s ease;
 }
@@ -1639,11 +1646,19 @@ input:checked + .toggleSwitchSlider:before {
     color: rgb(241, 55, 55);
     background: none;
     font-size: 12px;
+    line-height: 1.2;
+    padding: 3px 10px;
+    min-width: 64px;
     border-radius: 3px;
     font-family: 'Avenir Medium';
     transition: 0.25s ease;
     cursor: pointer;
     outline: none;
+}
+.settingsAuthAccountWrapper {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
 }
 .settingsAuthAccountLogOut:hover,
 .settingsAuthAccountLogOut:focus {
@@ -2855,21 +2870,23 @@ input:checked + .toggleSwitchSlider:before {
 
 /* Logo image. */
 #image_seal {
-    height: 70px;
-    width: auto;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
     position: relative;
-    border: 2px solid white;
-    box-sizing: border-box;
-    border-radius: 50%;
+    filter: drop-shadow(0px 0px 12px rgba(0, 0, 0, 0.45));
 }
 
 /* Logo container styles. */
 #image_seal_container {
-    position: relative;
-    height: 70px;
-    width: 70px;
-    border-radius: 50%;
-    margin-top: 50px;
+    position: absolute;
+    top: 40px;
+    left: 70px;
+    height: 92px;
+    width: 92px;
+    border-radius: 14px;
+    margin-top: 0px;
+    z-index: 35;
 }
 
 /* Logo container styles w/ update. */
@@ -2885,7 +2902,7 @@ input:checked + .toggleSwitchSlider:before {
     width: 100%;
     top: 0%;
     left: 0%;
-    border-radius: 50%;
+    border-radius: 14px;
     box-shadow: 0 0 15px #43c628;
     animation: glow-grow 4s ease-out infinite;
     background: rgba(0, 0, 0, 0.15);
@@ -2909,7 +2926,8 @@ input:checked + .toggleSwitchSlider:before {
     position: absolute;
     z-index: 1;
     top: 115%;
-    left: -17.5px;
+    left: -6px;
+    right: auto;
     font-family: 'Avenir Medium';
     font-size: 12px;
     transition: visibility 0s linear 0.25s, opacity 0.25s ease;
@@ -2918,6 +2936,7 @@ input:checked + .toggleSwitchSlider:before {
     content: " ";
     position: absolute;
     left: 50%;
+    right: auto;
     bottom: 100%;
     margin-left: -5px;
     border-width: 5px;
@@ -3136,13 +3155,13 @@ input:checked + .toggleSwitchSlider:before {
     transition-delay:0s;
 }
 
-/* X icon colors. */
-#xSVG:hover,
-#xURL:focus #xSVG {
-    fill: #000000;
+/* Twitch icon colors. */
+#twitchSVG:hover,
+#twitchURL:focus #twitchSVG {
+    fill: #9146ff;
 }
-#xSVG:active {
-    fill: #090909;
+#twitchSVG:active {
+    fill: #7c39db;
 }
 
 /* Instagram icon colors. */
@@ -3941,8 +3960,9 @@ input:checked + .toggleSwitchSlider:before {
 /* Stationary image for the spinner. */
 #loadCenterImage {
     position: absolute;
-    width: 277px;
+    width: 240px;
     height: auto;
+    animation: loadingPulse 1.8s ease-in-out infinite;
 }
 
 /* Rotating image for the spinner. */
@@ -3965,4 +3985,15 @@ input:checked + .toggleSwitchSlider:before {
 /* Class which is applied when the spinner image is spinning. */
 .rotating {
     animation: rotating 10s linear infinite;
+}
+
+@keyframes loadingPulse {
+    0% {
+        transform: scale(0.98);
+        opacity: 0.82;
+    }
+    100% {
+        transform: scale(1.02);
+        opacity: 1;
+    }
 }

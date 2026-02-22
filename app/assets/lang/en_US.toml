@@ -152,6 +152,9 @@ requiredValue = "* Required"
 title = "Unknown Error During Login"
 desc = "An unknown error has occurred. Please see the console for details."
 
+[js.landing]
+noSelection = "No Server Selected"
+
 [js.landing.launch]
 pleaseWait = "Please wait.."
 failureTitle = "Error During Launch"
@@ -196,6 +199,7 @@ fatalError = "Fatal Error"
 unableToLoadDistributionIndex = "Could not load a copy of the distribution index. See the console (CTRL + Shift + i) for more details."
 pleaseWait = "Please wait.."
 errorDuringLaunchTitle = "Error During Launch"
+errorDuringLaunchText = "See console (CTRL + Shift + i) for more details."
 seeConsoleForDetails = "See console (CTRL + Shift + i) for more details."
 validatingFileIntegrity = "Validating file integrity.."
 errorDuringFileVerificationTitle = "Error During File Verification"
@@ -209,6 +213,7 @@ checkConsoleForDetails = "Please check the console (CTRL + Shift + i) for more d
 
 [js.landing.news]
 checking = "Checking for News"
+by = "by"
 
 [js.landing.discord]
 loading = "Loading game.."
@@ -228,6 +233,11 @@ errorMessage = "Microsoft authentication failed. Please try again."
 okButton = "OK"
 
 [js.settings.mstfLogout]
+errorTitle = "Something Went Wrong"
+errorMessage = "Microsoft logout failed. Please try again."
+okButton = "OK"
+
+[js.settings.msftLogout]
 errorTitle = "Something Went Wrong"
 errorMessage = "Microsoft logout failed. Please try again."
 okButton = "OK"
