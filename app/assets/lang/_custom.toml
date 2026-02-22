@@ -4,15 +4,15 @@
 title = "WaferMC Launcher"
 
 [ejs.landing]
-mediaGitHubURL = "https://www.wafermc.it"
+mediaGitHubURL = "https://github.com/WaferMC-Plugins"
 mediaTwitchURL = "https://twitch.wafermc.it"
 mediaInstagramURL = "https://www.instagram.com/propriowafer/"
 mediaYouTubeURL = "https://www.youtube.com/@propriowafer"
 mediaDiscordURL = "https://discord.wafermc.it"
 
 [ejs.settings]
-sourceGithub = "Sito Web"
-sourceGithubLink = "https://www.wafermc.it"
+sourceGithub = "GitHub"
+sourceGithubLink = "https://github.com/WaferMC-Plugins/WaferMC-Launcher"
 support = "Discord"
 supportLink = "https://discord.wafermc.it"
 

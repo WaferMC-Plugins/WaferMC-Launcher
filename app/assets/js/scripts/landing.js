@@ -26,6 +26,7 @@ const {
     latestOpenJDK,
     extractJdk
 }                             = require('helios-core/java')
+const child_process           = require('child_process')
 
 // Internal Requirements
 const DiscordWrapper          = require('./assets/js/discordwrapper')
@@ -37,6 +38,7 @@ const launch_details          = document.getElementById('launch_details')
 const launch_progress         = document.getElementById('launch_progress')
 const launch_progress_label   = document.getElementById('launch_progress_label')
 const launch_details_text     = document.getElementById('launch_details_text')
+const launch_button           = document.getElementById('launch_button')
 const server_selection_button = document.getElementById('server_selection_button')
 const user_text               = document.getElementById('user_text')
 
@@ -112,6 +114,8 @@ function toggleLaunchArea(loading){
     } else {
         launch_details.style.display = 'none'
         launch_content.style.display = 'inline-flex'
+        launchInProgress = false
+        setLaunchEnabled(ConfigManager.getSelectedServer() != null)
     }
 }
 
@@ -150,12 +154,56 @@ function setDownloadPercentage(percent){
  * 
  * @param {boolean} val True to enable, false to disable.
  */
+function isGameRunning(){
+    return proc != null && proc.pid != null && proc.exitCode == null
+}
+
+function setLaunchButtonLabel(){
+    launch_button.innerHTML = isGameRunning()
+        ? Lang.queryJS('landing.launch.closeGameButton')
+        : Lang.queryJS('landing.launch.playGameButton')
+}
+
 function setLaunchEnabled(val){
-    document.getElementById('launch_button').disabled = !val
+    setLaunchButtonLabel()
+    const isEnabled = isGameRunning() || (val && !launchInProgress)
+    launch_button.disabled = !isEnabled
+}
+
+function requestGameClose(){
+    if(!isGameRunning()){
+        return
+    }
+    launch_button.disabled = true
+    launch_button.innerHTML = Lang.queryJS('landing.launch.closingGame')
+
+    try {
+        if(process.platform === 'win32'){
+            child_process.spawn('taskkill', ['/PID', `${proc.pid}`, '/T', '/F'], {
+                windowsHide: true
+            })
+        } else {
+            proc.kill('SIGTERM')
+        }
+    } catch(err){
+        loggerLanding.error('Unable to close the game process.', err)
+        setLaunchEnabled(ConfigManager.getSelectedServer() != null)
+    }
 }
 
 // Bind launch button
-document.getElementById('launch_button').addEventListener('click', async e => {
+launch_button.addEventListener('click', async _e => {
+    if(isGameRunning()){
+        loggerLanding.info('Close game requested by user.')
+        requestGameClose()
+        return
+    }
+    if(launchInProgress){
+        return
+    }
+
+    launchInProgress = true
+    setLaunchEnabled(ConfigManager.getSelectedServer() != null)
     loggerLanding.info('Launching game..')
     try {
         const server = (await DistroAPI.getDistribution()).getServerById(ConfigManager.getSelectedServer())
@@ -496,7 +544,8 @@ async function downloadJava(effectiveJavaOptions, launchAfter = true) {
 }
 
 // Keep reference to Minecraft Process
-let proc
+let proc = null
+let launchInProgress = false
 // Is DiscordRPC enabled
 let hasRPC = false
 // Joined server regex
@@ -530,6 +579,8 @@ async function dlAsync(login = true) {
     if(login) {
         if(ConfigManager.getSelectedAccount() == null){
             loggerLanding.error('You must be logged into an account.')
+            launchInProgress = false
+            setLaunchEnabled(ConfigManager.getSelectedServer() != null)
             return
         }
     }
@@ -667,23 +718,31 @@ async function dlAsync(login = true) {
         try {
             // Build Minecraft process.
             proc = pb.build()
+            proc.on('close', (code, signal) => {
+                loggerLaunchSuite.info(`Minecraft closed (code=${code}, signal=${signal}).`)
+                if(hasRPC){
+                    loggerLaunchSuite.info('Shutting down Discord Rich Presence..')
+                    DiscordWrapper.shutdownRPC()
+                }
+                hasRPC = false
+                proc = null
+                launchInProgress = false
+                toggleLaunchArea(false)
+                setLaunchEnabled(ConfigManager.getSelectedServer() != null)
+            })
 
             // Bind listeners to stdout.
             proc.stdout.on('data', tempListener)
             proc.stderr.on('data', gameErrorListener)
 
             setLaunchDetails(Lang.queryJS('landing.dlAsync.doneEnjoyServer'))
+            launchInProgress = false
+            setLaunchEnabled(true)
 
             // Init Discord Hook
             if(distro.rawDistribution.discord != null && serv.rawServer.discord != null){
                 DiscordWrapper.initRPC(distro.rawDistribution.discord, serv.rawServer.discord)
                 hasRPC = true
-                proc.on('close', (code, signal) => {
-                    loggerLaunchSuite.info('Shutting down Discord Rich Presence..')
-                    DiscordWrapper.shutdownRPC()
-                    hasRPC = false
-                    proc = null
-                })
             }
 
         } catch(err) {

@@ -7,7 +7,9 @@ const logger = LoggerUtil.getLogger('ConfigManager')
 
 const sysRoot = process.env.APPDATA || (process.platform == 'darwin' ? process.env.HOME + '/Library/Application Support' : process.env.HOME)
 
-const dataPath = path.join(sysRoot, '.helioslauncher')
+const legacyDataPath = path.join(sysRoot, '.helioslauncher')
+const misspelledLegacyDataPath = path.join(sysRoot, '.hellioslauncher')
+const dataPath = path.join(sysRoot, '.WaferMC-Launcher')
 
 const launcherDir = require('@electron/remote').app.getPath('userData')
 
@@ -40,8 +42,43 @@ exports.setDataDirectory = function(dataDirectory){
 }
 
 const configPath = path.join(exports.getLauncherDirectory(), 'config.json')
-const configPathLEGACY = path.join(dataPath, 'config.json')
-const firstLaunch = !fs.existsSync(configPath) && !fs.existsSync(configPathLEGACY)
+const configPathLEGACY = path.join(legacyDataPath, 'config.json')
+const configPathLEGACY_MISSPELLED = path.join(misspelledLegacyDataPath, 'config.json')
+const firstLaunch = !fs.existsSync(configPath) && !fs.existsSync(configPathLEGACY) && !fs.existsSync(configPathLEGACY_MISSPELLED)
+
+/**
+ * Migrate old data directories to the current data directory.
+ *
+ * @param {string} currentDir Current configured data directory.
+ * @returns {string} Resolved data directory.
+ */
+function resolveDataDirectoryMigration(currentDir){
+    if(currentDir == null){
+        return dataPath
+    }
+
+    const normalized = path.normalize(currentDir)
+    const legacyCandidates = [
+        path.normalize(legacyDataPath),
+        path.normalize(misspelledLegacyDataPath)
+    ]
+
+    if(legacyCandidates.includes(normalized)){
+        if(fs.existsSync(currentDir) && !fs.existsSync(dataPath)){
+            try {
+                fs.moveSync(currentDir, dataPath)
+                logger.info(`Migrated launcher data directory to ${dataPath}`)
+            } catch(err){
+                logger.warn(`Failed to migrate launcher data directory from ${currentDir} to ${dataPath}`)
+                logger.warn(err)
+                return currentDir
+            }
+        }
+        return dataPath
+    }
+
+    return currentDir
+}
 
 exports.getAbsoluteMinRAM = function(ram){
     if(ram?.minimum != null) {
@@ -127,6 +164,8 @@ exports.load = function(){
         fs.ensureDirSync(path.join(configPath, '..'))
         if(fs.existsSync(configPathLEGACY)){
             fs.moveSync(configPathLEGACY, configPath)
+        } else if(fs.existsSync(configPathLEGACY_MISSPELLED)){
+            fs.moveSync(configPathLEGACY_MISSPELLED, configPath)
         } else {
             doLoad = false
             config = DEFAULT_CONFIG
@@ -148,6 +187,7 @@ exports.load = function(){
         }
         if(doValidate){
             config = validateKeySet(DEFAULT_CONFIG, config)
+            config.settings.launcher.dataDirectory = resolveDataDirectoryMigration(config.settings.launcher.dataDirectory)
             exports.save()
         }
     }

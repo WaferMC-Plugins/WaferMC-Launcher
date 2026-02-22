@@ -1,4 +1,4 @@
-appId: 'helioslauncher'
+appId: 'wafermclauncher'
 productName: 'WaferMC Launcher'
 artifactName: '${productName}-setup-${version}.${ext}'
 
@@ -53,3 +53,8 @@ linux:
 directories:
   buildResources: 'build'
   output: 'dist'
+
+publish:
+  provider: 'github'
+  owner: 'WaferMC-Plugins'
+  repo: 'WaferMC-Launcher'
