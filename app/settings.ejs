@@ -68,6 +68,24 @@
                     <!-- Mojang auth accounts populated here. -->
                 </div>
             </div>
+
+            <div class="settingsAuthAccountTypeContainer">
+                <div class="settingsAuthAccountTypeHeader">
+                    <div class="settingsAuthAccountTypeHeaderLeft">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24">
+                            <path fill="#ffffff" d="M12 12a5 5 0 1 0-5-5a5 5 0 0 0 5 5Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5Z"/>
+                        </svg>
+                        <span><%- lang('settings.offlineAccount') %></span>
+                    </div>
+                    <div class="settingsAuthAccountTypeHeaderRight">
+                        <button class="settingsAddAuthAccount" id="settingsAddOfflineAccount"><%- lang('settings.addOfflineAccount') %></button>
+                    </div>
+                </div>
+
+                <div class="settingsCurrentAccounts" id="settingsCurrentOfflineAccounts">
+                    <!-- Offline auth accounts populated here. -->
+                </div>
+            </div>
         </div>
         <div id="settingsTabMinecraft" class="settingsTab" style="display: none;">
             <div class="settingsTabHeader">

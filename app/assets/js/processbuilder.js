@@ -339,6 +339,15 @@ class ProcessBuilder {
         }
     }
 
+    _resolveUserType() {
+        if(this.authUser.type === 'microsoft') {
+            return 'msa'
+        } else if(this.authUser.type === 'offline') {
+            return 'legacy'
+        }
+        return 'mojang'
+    }
+
     /**
      * Construct the argument array that will be passed to the JVM process.
      * 
@@ -510,7 +519,7 @@ class ProcessBuilder {
                             val = this.authUser.accessToken
                             break
                         case 'user_type':
-                            val = this.authUser.type === 'microsoft' ? 'msa' : 'mojang'
+                            val = this._resolveUserType()
                             break
                         case 'version_type':
                             val = this.vanillaManifest.type
@@ -594,7 +603,7 @@ class ProcessBuilder {
                         val = this.authUser.accessToken
                         break
                     case 'user_type':
-                        val = this.authUser.type === 'microsoft' ? 'msa' : 'mojang'
+                        val = this._resolveUserType()
                         break
                     case 'user_properties': // 1.8.9 and below.
                         val = '{}'

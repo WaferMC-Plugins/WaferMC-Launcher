@@ -9,10 +9,14 @@ const basicEmail            = /^\S+@\S+\.\S+$/
 // Login Elements
 const loginCancelContainer  = document.getElementById('loginCancelContainer')
 const loginCancelButton     = document.getElementById('loginCancelButton')
+const loginSubheader        = document.getElementById('loginSubheader')
 const loginEmailError       = document.getElementById('loginEmailError')
 const loginUsername         = document.getElementById('loginUsername')
+const loginOptionsRow       = document.getElementById('loginOptions')
 const loginPasswordError    = document.getElementById('loginPasswordError')
 const loginPassword         = document.getElementById('loginPassword')
+const loginPasswordContainer = loginPassword.closest('.loginFieldContainer')
+const loginDisclaimer       = document.getElementById('loginDisclaimer')
 const checkmarkContainer    = document.getElementById('checkmarkContainer')
 const loginRememberOption   = document.getElementById('loginRememberOption')
 const loginButton           = document.getElementById('loginButton')
@@ -20,6 +24,10 @@ const loginForm             = document.getElementById('loginForm')
 
 // Control variables.
 let lu = false, lp = false
+let loginAuthMode = 'mojang'
+
+const defaultLoginSubheader = loginSubheader.innerHTML
+const defaultLoginUsernamePlaceholder = loginUsername.getAttribute('placeholder')
 
 
 /**
@@ -47,13 +55,26 @@ function shakeError(element){
 }
 
 /**
- * Validate that an email field is neither empty nor invalid.
- * 
- * @param {string} value The email value.
+ * Validate username/email based on current login mode.
+ *
+ * Mojang: email or premium username.
+ * Offline: non-premium username only.
+ *
+ * @param {string} value Username/email field value.
  */
 function validateEmail(value){
     if(value){
-        if(!basicEmail.test(value) && !validUsername.test(value)){
+        if(loginAuthMode === 'offline'){
+            if(!validUsername.test(value)){
+                showError(loginEmailError, Lang.queryJS('login.error.invalidValue'))
+                loginDisabled(true)
+                lu = false
+            } else {
+                loginEmailError.style.opacity = 0
+                lu = true
+                loginDisabled(false)
+            }
+        } else if(!basicEmail.test(value) && !validUsername.test(value)){
             showError(loginEmailError, Lang.queryJS('login.error.invalidValue'))
             loginDisabled(true)
             lu = false
@@ -77,6 +98,15 @@ function validateEmail(value){
  * @param {string} value The password value.
  */
 function validatePassword(value){
+    if(loginAuthMode === 'offline'){
+        loginPasswordError.style.opacity = 0
+        lp = true
+        if(lu){
+            loginDisabled(false)
+        }
+        return
+    }
+
     if(value){
         loginPasswordError.style.opacity = 0
         lp = true
@@ -143,13 +173,41 @@ function formDisabled(v){
     loginDisabled(v)
     loginCancelButton.disabled = v
     loginUsername.disabled = v
-    loginPassword.disabled = v
+    loginPassword.disabled = v || loginAuthMode === 'offline'
     if(v){
         checkmarkContainer.setAttribute('disabled', v)
     } else {
         checkmarkContainer.removeAttribute('disabled')
     }
     loginRememberOption.disabled = v
+}
+
+function setLoginMode(mode){
+    loginAuthMode = mode === 'offline' ? 'offline' : 'mojang'
+
+    loginUsername.value = ''
+    loginPassword.value = ''
+    loginEmailError.style.opacity = 0
+    loginPasswordError.style.opacity = 0
+    lu = false
+    lp = loginAuthMode === 'offline'
+    loginDisabled(true)
+
+    if(loginAuthMode === 'offline'){
+        loginSubheader.innerHTML = Lang.queryJS('login.offlineSubheader')
+        loginUsername.setAttribute('placeholder', Lang.queryJS('login.offlineUsernamePlaceholder'))
+        loginPasswordContainer.style.display = 'none'
+        loginOptionsRow.style.display = 'none'
+        loginDisclaimer.style.display = 'none'
+        loginPassword.disabled = true
+    } else {
+        loginSubheader.innerHTML = defaultLoginSubheader
+        loginUsername.setAttribute('placeholder', defaultLoginUsernamePlaceholder)
+        loginPasswordContainer.style.display = ''
+        loginOptionsRow.style.display = ''
+        loginDisclaimer.style.display = ''
+        loginPassword.disabled = false
+    }
 }
 
 let loginViewOnSuccess = VIEWS.landing
@@ -166,8 +224,7 @@ function loginCancelEnabled(val){
 
 loginCancelButton.onclick = (e) => {
     switchView(getCurrentView(), loginViewOnCancel, 500, 500, () => {
-        loginUsername.value = ''
-        loginPassword.value = ''
+        setLoginMode('mojang')
         loginCancelEnabled(false)
         if(loginViewCancelHandler != null){
             loginViewCancelHandler()
@@ -187,7 +244,11 @@ loginButton.addEventListener('click', () => {
     // Show loading stuff.
     loginLoading(true)
 
-    AuthManager.addMojangAccount(loginUsername.value, loginPassword.value).then((value) => {
+    const authPromise = loginAuthMode === 'offline'
+        ? AuthManager.addOfflineAccount(loginUsername.value)
+        : AuthManager.addMojangAccount(loginUsername.value, loginPassword.value)
+
+    authPromise.then((value) => {
         updateSelectedAccount(value)
         loginButton.innerHTML = loginButton.innerHTML.replace(Lang.queryJS('login.loggingIn'), Lang.queryJS('login.success'))
         $('.circle-loader').toggleClass('load-complete')
@@ -201,8 +262,7 @@ loginButton.addEventListener('click', () => {
                 loginViewOnSuccess = VIEWS.landing // Reset this for good measure.
                 loginCancelEnabled(false) // Reset this for good measure.
                 loginViewCancelHandler = null // Reset this for good measure.
-                loginUsername.value = ''
-                loginPassword.value = ''
+                setLoginMode('mojang')
                 $('.circle-loader').toggleClass('load-complete')
                 $('.checkmark').toggle()
                 loginLoading(false)

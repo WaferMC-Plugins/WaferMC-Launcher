@@ -5,7 +5,7 @@
 <h1 align="center">WaferMC Launcher</h1>
 
 <p align="center">
-  Il launcher ufficiale di WaferMC per entrare subito nel server con client gia pronto, mod corrette e aggiornamenti automatici.
+  Launcher ufficiale di WaferMC: accesso rapido al server con client pronto, mod corrette e aggiornamenti automatici.
 </p>
 
 <p align="center">
@@ -24,13 +24,14 @@
   <a href="https://discord.wafermc.it"><strong>Supporto Discord</strong></a>
 </p>
 
-## Cosa include
+## Perche usare WaferMC Launcher
 
 - Configurazione pronta per WaferMC, senza setup manuale.
-- Modpack e dipendenze gestite in automatico.
-- Verifica file all'avvio per ridurre errori e mismatch.
+- Modpack e dipendenze gestite automaticamente.
+- Verifica file all'avvio per evitare mismatch e problemi di avvio.
 - Aggiornamenti automatici del launcher.
-- Accesso account Microsoft integrato.
+- Accesso con account Microsoft, Mojang e Offline (username non premium supportato).
+- Controllo Java integrato con gestione guidata.
 
 ## Screenshot
 
@@ -55,21 +56,19 @@
 1. Apri la pagina release ufficiale.
 2. Scarica `WaferMC-Launcher-setup-<versione>.exe`.
 3. Esegui il setup e completa la procedura guidata.
-4. Avvia il launcher, effettua il login e premi `GIOCA`.
+4. Avvia il launcher, effettua l'accesso e premi `GIOCA`.
 
 ## Requisiti consigliati
 
 - Windows 10 o Windows 11 (64 bit)
 - Connessione internet stabile
-- Account Microsoft con Minecraft Java Edition
+- Java 21 x64 (installazione/validazione gestita dal launcher)
+- Account Microsoft o Mojang, oppure username Offline se il server lo supporta
 
-## Aggiornamenti
+## Aggiornamenti e changelog
 
-Il launcher controlla automaticamente la disponibilita di nuove versioni e propone l'update quando disponibile.
-
-Per aggiornare manualmente:
-
-- https://github.com/WaferMC-Plugins/WaferMC-Launcher/releases
+- Release ufficiali: https://github.com/WaferMC-Plugins/WaferMC-Launcher/releases
+- Changelog completo: disponibile in ogni release GitHub
 
 ## Supporto
 
@@ -79,4 +78,4 @@ Per aggiornare manualmente:
 
 ---
 
-Distribuisci e scarica il launcher solo dai canali ufficiali WaferMC.
+Scarica il launcher solo dai canali ufficiali WaferMC.

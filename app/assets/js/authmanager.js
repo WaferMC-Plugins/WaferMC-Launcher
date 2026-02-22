@@ -10,6 +10,7 @@
  */
 // Requirements
 const ConfigManager          = require('./configmanager')
+const crypto                 = require('crypto')
 const { LoggerUtil }         = require('helios-core')
 const { RestResponseStatus } = require('helios-core/common')
 const { MojangRestAPI, MojangErrorCode } = require('helios-core/mojang')
@@ -18,6 +19,7 @@ const { AZURE_CLIENT_ID }    = require('./ipcconstants')
 const Lang = require('./langloader')
 
 const log = LoggerUtil.getLogger('AuthManager')
+const OFFLINE_USERNAME_REGEX = /^[a-zA-Z0-9_]{1,16}$/
 
 // Error messages
 
@@ -126,6 +128,37 @@ function mojangErrorDisplayable(errorCode) {
         default:
             throw new Error(`Unknown error code: ${errorCode}`)
     }
+}
+
+function offlineErrorDisplayable(errorCode) {
+    switch(errorCode) {
+        case 'INVALID_USERNAME':
+            return {
+                title: Lang.queryJS('auth.offline.error.invalidUsernameTitle'),
+                desc: Lang.queryJS('auth.offline.error.invalidUsernameDesc')
+            }
+        case 'UNKNOWN':
+        default:
+            return {
+                title: Lang.queryJS('auth.offline.error.unknownErrorTitle'),
+                desc: Lang.queryJS('auth.offline.error.unknownErrorDesc')
+            }
+    }
+}
+
+/**
+ * Generate an offline UUID from username using the same namespace
+ * approach used by offline-mode servers (OfflinePlayer:<name>).
+ *
+ * @param {string} username
+ * @returns {string}
+ */
+function generateOfflineUUID(username) {
+    const hash = crypto.createHash('md5').update(`OfflinePlayer:${username}`, 'utf8').digest()
+    hash[6] = (hash[6] & 0x0f) | 0x30
+    hash[8] = (hash[8] & 0x3f) | 0x80
+    const hex = hash.toString('hex')
+    return `${hex.substring(0, 8)}-${hex.substring(8, 12)}-${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20, 32)}`
 }
 
 // Functions
@@ -267,6 +300,29 @@ exports.addMicrosoftAccount = async function(authCode) {
 }
 
 /**
+ * Add an offline account.
+ *
+ * @param {string} username The offline username.
+ * @returns {Promise.<Object>} Promise resolving the stored offline account.
+ */
+exports.addOfflineAccount = async function(username) {
+    try {
+        const trimmedUsername = username != null ? username.trim() : ''
+        if(!OFFLINE_USERNAME_REGEX.test(trimmedUsername)) {
+            return Promise.reject(offlineErrorDisplayable('INVALID_USERNAME'))
+        }
+
+        const uuid = generateOfflineUUID(trimmedUsername)
+        const ret = ConfigManager.addOfflineAuthAccount(uuid, trimmedUsername)
+        ConfigManager.save()
+        return ret
+    } catch(err) {
+        log.error(err)
+        return Promise.reject(offlineErrorDisplayable('UNKNOWN'))
+    }
+}
+
+/**
  * Remove a Mojang account. This will invalidate the access token associated
  * with the account and then remove it from the database.
  * 
@@ -304,6 +360,23 @@ exports.removeMicrosoftAccount = async function(uuid){
         ConfigManager.save()
         return Promise.resolve()
     } catch (err){
+        log.error('Error while removing account', err)
+        return Promise.reject(err)
+    }
+}
+
+/**
+ * Remove an offline account.
+ *
+ * @param {string} uuid The UUID of the account to be removed.
+ * @returns {Promise.<void>} Promise which resolves to void when the action is complete.
+ */
+exports.removeOfflineAccount = async function(uuid) {
+    try {
+        ConfigManager.removeAuthAccount(uuid)
+        ConfigManager.save()
+        return Promise.resolve()
+    } catch(err) {
         log.error('Error while removing account', err)
         return Promise.reject(err)
     }
@@ -418,6 +491,8 @@ exports.validateSelected = async function(){
 
     if(current.type === 'microsoft') {
         return await validateSelectedMicrosoftAccount()
+    } else if(current.type === 'offline') {
+        return true
     } else {
         return await validateSelectedMojangAccount()
     }

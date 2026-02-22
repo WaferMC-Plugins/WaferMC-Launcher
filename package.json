@@ -1,6 +1,6 @@
 {
   "name": "wafermclauncher",
-  "version": "2.2.4",
+  "version": "2.3.0",
   "productName": "WaferMC Launcher",
   "description": "Modded Minecraft Launcher",
   "author": "WaferMC",
@@ -50,3 +50,4 @@
     "url": "git+https://github.com/WaferMC-Plugins/WaferMC-Launcher.git"
   }
 }
+
