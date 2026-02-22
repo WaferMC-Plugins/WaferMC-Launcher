@@ -30,6 +30,16 @@ function initAutoUpdater(event, data) {
     if(isDev){
         autoUpdater.autoInstallOnAppQuit = false
         autoUpdater.updateConfigPath = path.join(__dirname, 'dev-app-update.yml')
+    } else {
+        const resourcesUpdateConfig = path.join(process.resourcesPath, 'app-update.yml')
+        if(fs.existsSync(resourcesUpdateConfig)) {
+            autoUpdater.updateConfigPath = resourcesUpdateConfig
+        } else {
+            const bundledFallbackConfig = path.join(__dirname, 'dev-app-update.yml')
+            if(fs.existsSync(bundledFallbackConfig)) {
+                autoUpdater.updateConfigPath = bundledFallbackConfig
+            }
+        }
     }
     if(process.platform === 'darwin'){
         autoUpdater.autoDownload = false

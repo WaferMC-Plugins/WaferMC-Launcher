@@ -84,6 +84,14 @@ if(!isDev){
                         loggerAutoUpdater.debug('Error Code:', info.code)
                     }
                 }
+                if(typeof settingsUpdateButtonStatus === 'function'){
+                    settingsUpdateButtonStatus(Lang.queryJS('settings.updates.checkForUpdatesButton'), false, () => {
+                        if(!isDev){
+                            ipcRenderer.send('autoUpdateAction', 'checkForUpdate')
+                            settingsUpdateButtonStatus(Lang.queryJS('settings.updates.checkingForUpdatesButton'), true)
+                        }
+                    })
+                }
                 break
             default:
                 loggerAutoUpdater.info('Unknown argument', arg)

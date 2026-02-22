@@ -35,21 +35,13 @@
 
 ## Screenshot
 
-| Home | Login |
+| Opzioni di accesso | Impostazioni account |
 | --- | --- |
-| ![Home launcher](./docs/images/home.png) | ![Login options](./docs/images/login-options.png) |
+| ![Opzioni di accesso](./docs/images/login-options.png) | ![Impostazioni account](./docs/images/settings-account.png) |
 
-| Account | Mod |
-| --- | --- |
-| ![Impostazioni account](./docs/images/settings-account.png) | ![Impostazioni mod](./docs/images/settings-mod.png) |
-
-| Java | Launcher |
-| --- | --- |
-| ![Impostazioni Java](./docs/images/settings-java.png) | ![Impostazioni launcher](./docs/images/settings-launcher.png) |
-
-| Info | Aggiornamenti |
-| --- | --- |
-| ![Pagina info](./docs/images/settings-info.png) | ![Pagina aggiornamenti](./docs/images/settings-updates.png) |
+| Aggiornamenti launcher |
+| --- |
+| ![Aggiornamenti launcher](./docs/images/settings-updates.png) |
 
 ## Installazione rapida
 

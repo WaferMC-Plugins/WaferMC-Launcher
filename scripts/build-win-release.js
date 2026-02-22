@@ -51,10 +51,18 @@ function resolveRcedit() {
 const builder = resolveElectronBuilder()
 const appExe = path.join('dist', 'win-unpacked', 'WaferMC Launcher.exe')
 const appIcon = path.join('build', 'icon.ico')
+const appUpdateConfigSrc = path.join(process.cwd(), 'dev-app-update.yml')
+const appUpdateConfigDest = path.join('dist', 'win-unpacked', 'resources', 'app-update.yml')
 
 run(process.execPath, [builder, 'build', '--win', 'dir', '--config.win.signAndEditExecutable=false'])
 
 const rcedit = resolveRcedit()
 run(rcedit, [appExe, '--set-icon', appIcon])
+
+if (!fs.existsSync(appUpdateConfigSrc)) {
+  throw new Error(`Config update non trovato: ${appUpdateConfigSrc}`)
+}
+fs.mkdirSync(path.dirname(appUpdateConfigDest), { recursive: true })
+fs.copyFileSync(appUpdateConfigSrc, appUpdateConfigDest)
 
 run(process.execPath, [builder, 'build', '--win', 'nsis', '--prepackaged', path.join('dist', 'win-unpacked'), '--config.win.signAndEditExecutable=false'])
