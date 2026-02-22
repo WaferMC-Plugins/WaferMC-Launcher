@@ -219,8 +219,8 @@ by = "di"
 
 [js.landing.discord]
 loading = "Caricamento gioco.."
-joining = "In viaggio verso Westeros!"
-joined = "Esplorazione del Regno!"
+joining = "Connessione a WaferMC.."
+joined = "Giocando su WaferMC!"
 
 [js.overlay]
 dismiss = "Chiudi"

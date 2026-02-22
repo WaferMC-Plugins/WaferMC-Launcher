@@ -17,6 +17,6 @@ support = "Discord"
 supportLink = "https://discord.wafermc.it"
 
 [ejs.welcome]
-welcomeHeader = "BENVENUTO SU WESTEROSCRAFT"
-welcomeDescription = "La nostra missione e ricreare l'universo immaginato dall'autore George RR Martin nella sua serie fantasy, A Song of Ice and Fire. Attraverso lo sforzo collaborativo di migliaia di membri della community, abbiamo cercato di creare Westeros nel modo piu accurato e preciso possibile dentro Minecraft. Il mondo che stiamo creando e tuo da esplorare. Viaggia da Dorne a Castle Black e, se non hai paura, anche oltre la Barriera, ma non aspettare troppo. Come avverte in modo inquietante il motto di Casa Stark: Winter is Coming."
-welcomeDescCTA = "Ti separano solo pochi clic da Westeros."
+welcomeHeader = "BENVENUTO SU WAFERMC"
+welcomeDescription = "WaferMC Launcher e il client ufficiale per giocare sul server WaferMC. Troverai un ambiente gia configurato con mod, impostazioni e dipendenze pronte all'uso, cosi puoi entrare subito senza setup manuale. A ogni avvio il launcher controlla e aggiorna automaticamente i file necessari, per offrirti compatibilita con il server, stabilita e prestazioni migliori."
+welcomeDescCTA = "Ti separano solo pochi clic da WaferMC."
