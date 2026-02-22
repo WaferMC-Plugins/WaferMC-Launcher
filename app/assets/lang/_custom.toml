@@ -18,5 +18,5 @@ supportLink = "https://discord.wafermc.it"
 
 [ejs.welcome]
 welcomeHeader = "BENVENUTO SU WAFERMC"
-welcomeDescription = "WaferMC Launcher e il client ufficiale per giocare sul server WaferMC. Troverai un ambiente gia configurato con mod, impostazioni e dipendenze pronte all'uso, cosi puoi entrare subito senza setup manuale. A ogni avvio il launcher controlla e aggiorna automaticamente i file necessari, per offrirti compatibilita con il server, stabilita e prestazioni migliori."
+welcomeDescription = "WaferMC Launcher è il client ufficiale per giocare sul server WaferMC. Troverai un ambiente gia configurato con mod, impostazioni e dipendenze pronte all'uso, così puoi entrare subito senza setup manuale. A ogni avvio il launcher controlla e aggiorna automaticamente i file necessari, per offrirti compatibilità con il server, stabilità e prestazioni migliori."
 welcomeDescCTA = "Ti separano solo pochi clic da WaferMC."
