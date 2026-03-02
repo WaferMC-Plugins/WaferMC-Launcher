@@ -23,6 +23,15 @@ exports.getLauncherDirectory = function(){
 }
 
 /**
+ * Retrieve the directory used to store imported skin files.
+ *
+ * @returns {string} Absolute path to the skins directory.
+ */
+exports.getSkinsDirectory = function(){
+    return path.join(exports.getLauncherDirectory(), 'skins')
+}
+
+/**
  * Get the launcher's data directory. This is where all files related
  * to game launch are installed (common, instances, java, etc).
  * 
@@ -140,6 +149,146 @@ const DEFAULT_CONFIG = {
 }
 
 let config = null
+const AUTH_ACCOUNT_SKIN_TYPES = ['file', 'username', 'url']
+
+function sanitizeAuthAccountSkinEntry(entry){
+    if(entry == null || typeof entry !== 'object'){
+        return null
+    }
+
+    const id = typeof entry.id === 'string' ? entry.id.trim() : ''
+    const type = typeof entry.type === 'string' ? entry.type.trim().toLowerCase() : ''
+    const value = typeof entry.value === 'string' ? entry.value.trim() : ''
+    const label = typeof entry.label === 'string' ? entry.label.trim() : ''
+
+    if(id.length === 0 || AUTH_ACCOUNT_SKIN_TYPES.indexOf(type) === -1 || value.length === 0){
+        return null
+    }
+
+    const normalized = {
+        id,
+        type,
+        value,
+        label: label.length > 0 ? label : value
+    }
+
+    if(type === 'file'){
+        const filePath = typeof entry.path === 'string' ? entry.path.trim() : ''
+        if(filePath.length === 0){
+            return null
+        }
+        normalized.path = filePath
+    }
+
+    if(Number.isFinite(entry.createdAt)){
+        normalized.createdAt = Number(entry.createdAt)
+    }
+
+    return normalized
+}
+
+function cloneAuthAccountSkinEntry(entry){
+    const cloned = {
+        id: entry.id,
+        type: entry.type,
+        value: entry.value,
+        label: entry.label
+    }
+    if(entry.path != null){
+        cloned.path = entry.path
+    }
+    if(entry.createdAt != null){
+        cloned.createdAt = entry.createdAt
+    }
+    return cloned
+}
+
+function normalizeAuthAccountSkinState(authAcc){
+    if(authAcc == null || typeof authAcc !== 'object'){
+        return
+    }
+
+    const sourceSkins = Array.isArray(authAcc.customSkins) ? authAcc.customSkins : []
+    const normalizedSkins = []
+    const seenIds = new Set()
+    for(const rawSkin of sourceSkins){
+        const normalizedSkin = sanitizeAuthAccountSkinEntry(rawSkin)
+        if(normalizedSkin != null && !seenIds.has(normalizedSkin.id)){
+            seenIds.add(normalizedSkin.id)
+            normalizedSkins.push(normalizedSkin)
+        }
+    }
+    authAcc.customSkins = normalizedSkins
+
+    const selectedSkinId = typeof authAcc.selectedSkinId === 'string' ? authAcc.selectedSkinId.trim() : ''
+    if(selectedSkinId.length > 0 && normalizedSkins.some((skin) => skin.id === selectedSkinId)){
+        authAcc.selectedSkinId = selectedSkinId
+    } else {
+        authAcc.selectedSkinId = null
+    }
+}
+
+function normalizeAuthAccountSkinDatabase(){
+    const authDb = config?.authenticationDatabase
+    if(authDb == null || typeof authDb !== 'object'){
+        return
+    }
+    const uuids = Object.keys(authDb)
+    for(const uuid of uuids){
+        normalizeAuthAccountSkinState(authDb[uuid])
+    }
+}
+
+function cloneAuthAccountSkinState(authAcc){
+    if(authAcc == null || typeof authAcc !== 'object'){
+        return {
+            customSkins: [],
+            selectedSkinId: null
+        }
+    }
+
+    normalizeAuthAccountSkinState(authAcc)
+    return {
+        customSkins: authAcc.customSkins.map(cloneAuthAccountSkinEntry),
+        selectedSkinId: authAcc.selectedSkinId
+    }
+}
+
+function ensureAuthAccountSkinState(uuid){
+    const authAcc = config.authenticationDatabase[uuid]
+    if(authAcc == null){
+        return null
+    }
+    normalizeAuthAccountSkinState(authAcc)
+    return authAcc
+}
+
+function isPathWithin(basePath, targetPath){
+    const resolvedBase = path.resolve(basePath)
+    const resolvedTarget = path.resolve(targetPath)
+    return resolvedTarget === resolvedBase || resolvedTarget.startsWith(resolvedBase + path.sep)
+}
+
+function purgeAuthAccountSkinFiles(authAcc){
+    if(authAcc == null || !Array.isArray(authAcc.customSkins)){
+        return
+    }
+
+    const skinDirectory = exports.getSkinsDirectory()
+    for(const skin of authAcc.customSkins){
+        if(skin?.type !== 'file' || typeof skin.path !== 'string'){
+            continue
+        }
+
+        try {
+            if(isPathWithin(skinDirectory, skin.path) && fs.existsSync(skin.path)){
+                fs.removeSync(skin.path)
+            }
+        } catch(err){
+            logger.warn('Failed to remove imported skin file during account cleanup.', err)
+        }
+    }
+}
 
 // Persistance Utility Functions
 
@@ -188,6 +337,7 @@ exports.load = function(){
         if(doValidate){
             config = validateKeySet(DEFAULT_CONFIG, config)
             config.settings.launcher.dataDirectory = resolveDataDirectoryMigration(config.settings.launcher.dataDirectory)
+            normalizeAuthAccountSkinDatabase()
             exports.save()
         }
     }
@@ -339,6 +489,7 @@ exports.setSelectedServer = function(serverID){
  * @returns {Array.<Object>} An array of each stored authenticated account.
  */
 exports.getAuthAccounts = function(){
+    normalizeAuthAccountSkinDatabase()
     return config.authenticationDatabase
 }
 
@@ -350,7 +501,94 @@ exports.getAuthAccounts = function(){
  * @returns {Object} The authenticated account with the given uuid.
  */
 exports.getAuthAccount = function(uuid){
-    return config.authenticationDatabase[uuid]
+    return ensureAuthAccountSkinState(uuid)
+}
+
+/**
+ * Get custom skins configured for a given account.
+ *
+ * @param {string} uuid The UUID of the authenticated account.
+ * @returns {Array.<Object>} An array of configured custom skin entries.
+ */
+exports.getAuthAccountSkins = function(uuid){
+    const authAcc = ensureAuthAccountSkinState(uuid)
+    if(authAcc == null){
+        return []
+    }
+    return authAcc.customSkins.map(cloneAuthAccountSkinEntry)
+}
+
+/**
+ * Set custom skins for a given account.
+ *
+ * @param {string} uuid The UUID of the authenticated account.
+ * @param {Array.<Object>} skins An array of custom skin entries.
+ * @returns {Array.<Object>} Sanitized skin entries stored on the account.
+ */
+exports.setAuthAccountSkins = function(uuid, skins){
+    const authAcc = ensureAuthAccountSkinState(uuid)
+    if(authAcc == null){
+        return []
+    }
+
+    authAcc.customSkins = Array.isArray(skins)
+        ? skins.map(sanitizeAuthAccountSkinEntry).filter((skin) => skin != null)
+        : []
+    normalizeAuthAccountSkinState(authAcc)
+    return authAcc.customSkins.map(cloneAuthAccountSkinEntry)
+}
+
+/**
+ * Get the selected custom skin id for an account.
+ *
+ * @param {string} uuid The UUID of the authenticated account.
+ * @returns {string | null} The selected custom skin id or null.
+ */
+exports.getAuthAccountSelectedSkinId = function(uuid){
+    const authAcc = ensureAuthAccountSkinState(uuid)
+    return authAcc != null ? authAcc.selectedSkinId : null
+}
+
+/**
+ * Resolve the selected custom skin for an account.
+ *
+ * @param {string} uuid The UUID of the authenticated account.
+ * @returns {Object | null} The selected custom skin entry.
+ */
+exports.getAuthAccountSelectedSkin = function(uuid){
+    const authAcc = ensureAuthAccountSkinState(uuid)
+    if(authAcc == null || authAcc.selectedSkinId == null){
+        return null
+    }
+
+    const selected = authAcc.customSkins.find((skin) => skin.id === authAcc.selectedSkinId)
+    return selected != null ? cloneAuthAccountSkinEntry(selected) : null
+}
+
+/**
+ * Set the selected custom skin for an account.
+ *
+ * @param {string} uuid The UUID of the authenticated account.
+ * @param {string | null} skinId The selected skin id (null for default).
+ * @returns {string | null} The resolved selected skin id.
+ */
+exports.setAuthAccountSelectedSkin = function(uuid, skinId){
+    const authAcc = ensureAuthAccountSkinState(uuid)
+    if(authAcc == null){
+        return null
+    }
+
+    const resolvedSkinId = typeof skinId === 'string' ? skinId.trim() : ''
+    if(resolvedSkinId.length === 0){
+        authAcc.selectedSkinId = null
+        return authAcc.selectedSkinId
+    }
+
+    if(authAcc.customSkins.some((skin) => skin.id === resolvedSkinId)){
+        authAcc.selectedSkinId = resolvedSkinId
+    }
+
+    return authAcc.selectedSkinId
 }
 
 /**
@@ -378,14 +616,18 @@ exports.updateMojangAuthAccount = function(uuid, accessToken){
  * @returns {Object} The authenticated account object created by this action.
  */
 exports.addMojangAuthAccount = function(uuid, accessToken, username, displayName){
+    const skinState = cloneAuthAccountSkinState(config.authenticationDatabase[uuid])
     config.selectedAccount = uuid
     config.authenticationDatabase[uuid] = {
         type: 'mojang',
         accessToken,
         username: username.trim(),
         uuid: uuid.trim(),
-        displayName: displayName.trim()
+        displayName: displayName.trim(),
+        customSkins: skinState.customSkins,
+        selectedSkinId: skinState.selectedSkinId
     }
+    normalizeAuthAccountSkinState(config.authenticationDatabase[uuid])
     return config.authenticationDatabase[uuid]
 }
 
@@ -398,14 +640,18 @@ exports.addMojangAuthAccount = function(uuid, accessToken, username, displayName
  */
 exports.addOfflineAuthAccount = function(uuid, username) {
     const trimmedUsername = username.trim()
+    const skinState = cloneAuthAccountSkinState(config.authenticationDatabase[uuid])
     config.selectedAccount = uuid
     config.authenticationDatabase[uuid] = {
         type: 'offline',
         accessToken: '0',
         username: trimmedUsername,
         uuid: uuid.trim(),
-        displayName: trimmedUsername
+        displayName: trimmedUsername,
+        customSkins: skinState.customSkins,
+        selectedSkinId: skinState.selectedSkinId
     }
+    normalizeAuthAccountSkinState(config.authenticationDatabase[uuid])
     return config.authenticationDatabase[uuid]
 }
 
@@ -444,6 +690,7 @@ exports.updateMicrosoftAuthAccount = function(uuid, accessToken, msAccessToken, 
  * @returns {Object} The authenticated account object created by this action.
  */
 exports.addMicrosoftAuthAccount = function(uuid, accessToken, name, mcExpires, msAccessToken, msRefreshToken, msExpires) {
+    const skinState = cloneAuthAccountSkinState(config.authenticationDatabase[uuid])
     config.selectedAccount = uuid
     config.authenticationDatabase[uuid] = {
         type: 'microsoft',
@@ -456,8 +703,11 @@ exports.addMicrosoftAuthAccount = function(uuid, accessToken, name, mcExpires, m
             access_token: msAccessToken,
             refresh_token: msRefreshToken,
             expires_at: msExpires
-        }
+        },
+        customSkins: skinState.customSkins,
+        selectedSkinId: skinState.selectedSkinId
     }
+    normalizeAuthAccountSkinState(config.authenticationDatabase[uuid])
     return config.authenticationDatabase[uuid]
 }
 
@@ -472,6 +722,7 @@ exports.addMicrosoftAuthAccount = function(uuid, accessToken, name, mcExpires, m
  */
 exports.removeAuthAccount = function(uuid){
     if(config.authenticationDatabase[uuid] != null){
+        purgeAuthAccountSkinFiles(config.authenticationDatabase[uuid])
         delete config.authenticationDatabase[uuid]
         if(config.selectedAccount === uuid){
             const keys = Object.keys(config.authenticationDatabase)
@@ -493,7 +744,7 @@ exports.removeAuthAccount = function(uuid){
  * @returns {Object} The selected authenticated account.
  */
 exports.getSelectedAccount = function(){
-    return config.authenticationDatabase[config.selectedAccount]
+    return ensureAuthAccountSkinState(config.selectedAccount)
 }
 
 /**
@@ -505,7 +756,7 @@ exports.getSelectedAccount = function(){
  * @returns {Object} The selected authenticated account.
  */
 exports.setSelectedAccount = function(uuid){
-    const authAcc = config.authenticationDatabase[uuid]
+    const authAcc = ensureAuthAccountSkinState(uuid)
     if(authAcc != null) {
         config.selectedAccount = uuid
     }

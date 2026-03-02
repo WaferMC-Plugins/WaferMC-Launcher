@@ -1,6 +1,7 @@
 /**
  * Script for overlay.ejs
  */
+const SkinManager = require('./assets/js/skinmanager')
 
 /* Overlay Wrapper Functions */
 
@@ -302,17 +303,26 @@ async function populateServerListings(){
 function populateAccountListings(){
     const accountsObj = ConfigManager.getAuthAccounts()
     const accounts = Array.from(Object.keys(accountsObj), v=>accountsObj[v])
+    const selectedAccount = ConfigManager.getSelectedAccount()
+    const selectedUUID = selectedAccount != null ? selectedAccount.uuid : null
     let htmlString = ''
     for(let i=0; i<accounts.length; i++){
-        const resolvedUUID = accounts[i].uuid != null ? accounts[i].uuid.replace(/-/g, '').trim() : ''
-        const primarySkinURL = `https://mc-heads.net/head/${resolvedUUID}/40`
-        const fallbackSkinURL = `https://crafatar.com/avatars/${resolvedUUID}?overlay=true&size=40`
-        htmlString += `<button class="accountListing" uuid="${accounts[i].uuid}" ${i===0 ? 'selected' : ''}>
-            <img src="${primarySkinURL}" onerror="this.onerror=null;this.src='${fallbackSkinURL}'">
+        const isSelected = selectedUUID != null ? selectedUUID === accounts[i].uuid : i === 0
+        htmlString += `<button class="accountListing" uuid="${accounts[i].uuid}" ${isSelected ? 'selected' : ''}>
+            <img data-account-index="${i}" src="${SkinManager.LOGO_FALLBACK}">
             <div class="accountListingName">${accounts[i].displayName}</div>
         </button>`
     }
     document.getElementById('accountSelectListScrollable').innerHTML = htmlString
+
+    accounts.forEach((account, idx) => {
+        SkinManager.resolveAccountAvatar(account, 40).then((resolvedURL) => {
+            const image = document.querySelector(`#accountSelectListScrollable img[data-account-index="${idx}"]`)
+            if(image != null){
+                image.src = resolvedURL
+            }
+        })
+    })
 
 }
 

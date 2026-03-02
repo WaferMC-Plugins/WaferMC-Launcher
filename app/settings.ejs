@@ -86,6 +86,44 @@
                     <!-- Offline auth accounts populated here. -->
                 </div>
             </div>
+
+            <div class="settingsAuthAccountTypeContainer" id="settingsSkinManagerContainer">
+                <div class="settingsAuthAccountTypeHeader">
+                    <div class="settingsAuthAccountTypeHeaderLeft">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24">
+                            <path fill="#ffffff" d="M7 2h10a2 2 0 0 1 2 2v2.17a3 3 0 0 1-1.5 2.6l-6.74 3.89a3 3 0 0 0-1.5 2.6V22l-4-2v-4.74a3 3 0 0 1 1.5-2.6l6.74-3.89A3 3 0 0 0 15 6.17V6H7a2 2 0 0 1 0-4Zm0 16a2 2 0 1 1 0 4a2 2 0 0 1 0-4Z"/>
+                        </svg>
+                        <span><%- lang('settings.skinManager') %></span>
+                    </div>
+                </div>
+                <div id="settingsSkinManagerInner">
+                    <div id="settingsSkinManagerEmpty"><%- lang('settings.skinManagerEmpty') %></div>
+                    <div id="settingsSkinManagerContent" style="display: none;">
+                        <div id="settingsSkinManagerPreview">
+                            <div id="settingsSkinManagerPreviewAvatar"></div>
+                            <div id="settingsSkinManagerPreviewMeta">
+                                <span id="settingsSkinManagerPreviewName"></span>
+                                <span id="settingsSkinManagerPreviewSource"></span>
+                            </div>
+                        </div>
+                        <div id="settingsSkinManagerActions">
+                            <button id="settingsSkinAddFile" class="settingsSkinManagerActionButton"><%- lang('settings.skinAddFile') %></button>
+                            <div class="settingsSkinManagerInlineAction">
+                                <input id="settingsSkinAddUsernameInput" class="settingsSkinManagerInput" type="text" maxlength="16" placeholder="<%- lang('settings.skinUsernamePlaceholder') %>">
+                                <button id="settingsSkinAddUsernameButton" class="settingsSkinManagerActionButton"><%- lang('settings.skinAddUsername') %></button>
+                            </div>
+                            <div class="settingsSkinManagerInlineAction">
+                                <input id="settingsSkinAddUrlInput" class="settingsSkinManagerInput" type="text" placeholder="<%- lang('settings.skinUrlPlaceholder') %>">
+                                <button id="settingsSkinAddUrlButton" class="settingsSkinManagerActionButton"><%- lang('settings.skinAddUrl') %></button>
+                            </div>
+                        </div>
+                        <div id="settingsSkinManagerLibrary">
+                            <div id="settingsSkinManagerLibraryTitle"><%- lang('settings.skinLibraryTitle') %></div>
+                            <div id="settingsSkinManagerLibraryList"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         <div id="settingsTabMinecraft" class="settingsTab" style="display: none;">
             <div class="settingsTabHeader">

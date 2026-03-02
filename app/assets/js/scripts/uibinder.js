@@ -26,6 +26,35 @@ const VIEWS = {
 // The currently shown view container.
 let currentView
 
+const STARTUP_LOADING_WATCHDOG_MS = 25000
+let startupLoadingWatchdog = null
+
+function clearStartupLoadingWatchdog(){
+    if(startupLoadingWatchdog != null){
+        clearTimeout(startupLoadingWatchdog)
+        startupLoadingWatchdog = null
+    }
+}
+
+function ensureLoadingOverlayDismissed(forceLoginView = false){
+    if(forceLoginView){
+        $('#main').show()
+        if(currentView == null){
+            currentView = VIEWS.loginOptions
+            $(VIEWS.loginOptions).show()
+        }
+    }
+
+    $('#loadingContainer').fadeOut(500, () => {
+        $('#loadSpinnerImage').removeClass('rotating')
+    })
+}
+
+startupLoadingWatchdog = setTimeout(() => {
+    console.error('[UIBinder] Startup watchdog triggered. Forcing loading overlay dismissal.')
+    ensureLoadingOverlayDismissed(true)
+}, STARTUP_LOADING_WATCHDOG_MS)
+
 /**
  * Switch launcher views.
  * 
@@ -64,55 +93,75 @@ async function showMainUI(data){
         ipcRenderer.send('autoUpdateAction', 'initAutoUpdater', ConfigManager.getAllowPrerelease())
     }
 
-    await prepareSettings(true)
-    updateSelectedServer(data.getServerById(ConfigManager.getSelectedServer()))
-    refreshServerStatus()
+    try {
+        await prepareSettings(true)
+    } catch(err){
+        console.error('[UIBinder] prepareSettings failed during startup:', err)
+    }
+
+    try {
+        updateSelectedServer(data.getServerById(ConfigManager.getSelectedServer()))
+        refreshServerStatus()
+    } catch(err){
+        console.error('[UIBinder] Failed to initialize selected server during startup:', err)
+    }
+
     setTimeout(() => {
-        document.getElementById('frameBar').style.backgroundColor = 'rgba(0, 0, 0, 0.5)'
-        const bgimg = document.body.getAttribute('bgimg')
-        document.body.style.backgroundImage = `url('assets/images/backgrounds/${bgimg || '0.jpg'}')`
-        $('#main').show()
+        try {
+            document.getElementById('frameBar').style.backgroundColor = 'rgba(0, 0, 0, 0.5)'
+            const bgimg = document.body.getAttribute('bgimg')
+            document.body.style.backgroundImage = `url('assets/images/backgrounds/${bgimg || '0.jpg'}')`
+            $('#main').show()
 
-        const isLoggedIn = Object.keys(ConfigManager.getAuthAccounts()).length > 0
+            const isLoggedIn = Object.keys(ConfigManager.getAuthAccounts()).length > 0
 
-        // If this is enabled in a development environment we'll get ratelimited.
-        // The relaunch frequency is usually far too high.
-        if(!isDev && isLoggedIn){
-            validateSelectedAccount()
-        }
-
-        if(ConfigManager.isFirstLaunch()){
-            currentView = VIEWS.welcome
-            $(VIEWS.welcome).fadeIn(1000)
-        } else {
-            if(isLoggedIn){
-                currentView = VIEWS.landing
-                $(VIEWS.landing).fadeIn(1000)
-            } else {
-                loginOptionsCancelEnabled(false)
-                loginOptionsViewOnLoginSuccess = VIEWS.landing
-                loginOptionsViewOnLoginCancel = VIEWS.loginOptions
-                currentView = VIEWS.loginOptions
-                $(VIEWS.loginOptions).fadeIn(1000)
+            // If this is enabled in a development environment we'll get ratelimited.
+            // The relaunch frequency is usually far too high.
+            if(!isDev && isLoggedIn){
+                validateSelectedAccount()
             }
-        }
 
-        setTimeout(() => {
-            $('#loadingContainer').fadeOut(500, () => {
-                $('#loadSpinnerImage').removeClass('rotating')
-            })
-        }, 250)
+            if(ConfigManager.isFirstLaunch()){
+                currentView = VIEWS.welcome
+                $(VIEWS.welcome).fadeIn(1000)
+            } else {
+                if(isLoggedIn){
+                    currentView = VIEWS.landing
+                    $(VIEWS.landing).fadeIn(1000)
+                } else {
+                    loginOptionsCancelEnabled(false)
+                    loginOptionsViewOnLoginSuccess = VIEWS.landing
+                    loginOptionsViewOnLoginCancel = VIEWS.loginOptions
+                    currentView = VIEWS.loginOptions
+                    $(VIEWS.loginOptions).fadeIn(1000)
+                }
+            }
+        } catch(err){
+            console.error('[UIBinder] Failed to render main UI.', err)
+            currentView = VIEWS.loginOptions
+            $(VIEWS.loginOptions).show()
+        } finally {
+            clearStartupLoadingWatchdog()
+            // Ensure loading overlay is always dismissed.
+            setTimeout(() => {
+                ensureLoadingOverlayDismissed()
+            }, 250)
+        }
         
     }, 750)
     // Disable tabbing to the news container.
     initNews().then(() => {
         $('#newsContainer *').attr('tabindex', '-1')
+    }).catch((err) => {
+        console.error('[UIBinder] initNews failed:', err)
     })
 }
 
 function showFatalStartupError(){
+    clearStartupLoadingWatchdog()
     setTimeout(() => {
-        $('#loadingContainer').fadeOut(250, () => {
+        ensureLoadingOverlayDismissed()
+        setTimeout(() => {
             document.getElementById('overlayContainer').style.background = 'none'
             setOverlayContent(
                 Lang.queryJS('uibinder.startup.fatalErrorTitle'),
@@ -124,7 +173,7 @@ function showFatalStartupError(){
                 window.close()
             })
             toggleOverlay(true)
-        })
+        }, 250)
     }, 750)
 }
 
@@ -360,6 +409,10 @@ async function validateSelectedAccount(){
                 if(accLen > 0) {
                     loginOptionsViewOnCancel = getCurrentView()
                     loginOptionsViewCancelHandler = () => {
+                        const restoreSkinState = () => {
+                            ConfigManager.setAuthAccountSkins(selectedAcc.uuid, selectedAcc.customSkins || [])
+                            ConfigManager.setAuthAccountSelectedSkin(selectedAcc.uuid, selectedAcc.selectedSkinId || null)
+                        }
                         if(isMicrosoft) {
                             ConfigManager.addMicrosoftAuthAccount(
                                 selectedAcc.uuid,
@@ -370,10 +423,13 @@ async function validateSelectedAccount(){
                                 selectedAcc.microsoft.refresh_token,
                                 selectedAcc.microsoft.expires_at
                             )
+                            restoreSkinState()
                         } else if(isOffline) {
                             ConfigManager.addOfflineAuthAccount(selectedAcc.uuid, selectedAcc.displayName)
+                            restoreSkinState()
                         } else {
                             ConfigManager.addMojangAuthAccount(selectedAcc.uuid, selectedAcc.accessToken, selectedAcc.username, selectedAcc.displayName)
+                            restoreSkinState()
                         }
                         ConfigManager.save()
                         validateSelectedAccount()

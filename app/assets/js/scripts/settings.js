@@ -1,8 +1,12 @@
 // Requirements
+const crypto = require('crypto')
+const fs     = require('fs-extra')
 const os     = require('os')
+const path   = require('path')
 const semver = require('semver')
 
 const DropinModUtil  = require('./assets/js/dropinmodutil')
+const SkinManager = require('./assets/js/skinmanager')
 const { MSFT_OPCODE, MSFT_REPLY_TYPE, MSFT_ERROR } = require('./assets/js/ipcconstants')
 
 const settingsState = {
@@ -474,7 +478,9 @@ function bindAuthAccountSelect(){
             }
             val.setAttribute('selected', '')
             val.innerHTML = Lang.queryJS('settings.authAccountSelect.selectedButton')
-            setSelectedAccount(val.closest('.settingsAuthAccount').getAttribute('uuid'))
+            const targetUUID = val.closest('.settingsAuthAccount').getAttribute('uuid')
+            setSelectedAccount(targetUUID)
+            refreshSkinManager(targetUUID)
         }
     })
 }
@@ -547,6 +553,7 @@ function processLogOut(val, isLastAccount){
                 loginOptionsViewOnLoginCancel = VIEWS.loginOptions
                 switchView(getCurrentView(), VIEWS.loginOptions)
             }
+            refreshSkinManager()
         }).catch((err) => {
             msftLogoutLogger.error('Error while logging out account.', err)
         })
@@ -605,6 +612,7 @@ ipcRenderer.on(MSFT_OPCODE.REPLY_LOGOUT, (_, ...arguments_) => {
                     msAccDomElementCache.remove()
                     msAccDomElementCache = null
                 }
+                refreshSkinManager()
             })
             .finally(() => {
                 if(!isLastAccount) {
@@ -639,6 +647,64 @@ function refreshAuthAccountSelected(uuid){
 const settingsCurrentMicrosoftAccounts = document.getElementById('settingsCurrentMicrosoftAccounts')
 const settingsCurrentMojangAccounts = document.getElementById('settingsCurrentMojangAccounts')
 const settingsCurrentOfflineAccounts = document.getElementById('settingsCurrentOfflineAccounts')
+const settingsSkinManagerEmpty = document.getElementById('settingsSkinManagerEmpty')
+const settingsSkinManagerContent = document.getElementById('settingsSkinManagerContent')
+const settingsSkinManagerPreviewAvatar = document.getElementById('settingsSkinManagerPreviewAvatar')
+const settingsSkinManagerPreviewName = document.getElementById('settingsSkinManagerPreviewName')
+const settingsSkinManagerPreviewSource = document.getElementById('settingsSkinManagerPreviewSource')
+const settingsSkinManagerLibraryList = document.getElementById('settingsSkinManagerLibraryList')
+const settingsSkinAddFile = document.getElementById('settingsSkinAddFile')
+const settingsSkinAddUsernameInput = document.getElementById('settingsSkinAddUsernameInput')
+const settingsSkinAddUsernameButton = document.getElementById('settingsSkinAddUsernameButton')
+const settingsSkinAddUrlInput = document.getElementById('settingsSkinAddUrlInput')
+const settingsSkinAddUrlButton = document.getElementById('settingsSkinAddUrlButton')
+
+function escapeHTML(value){
+    return `${value ?? ''}`
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll('\'', '&#39;')
+}
+
+function generateSkinEntryId(){
+    return `${Date.now().toString(36)}-${crypto.randomBytes(4).toString('hex')}`
+}
+
+function getSkinSourceLabel(skinEntry){
+    if(skinEntry == null){
+        return Lang.queryJS('settings.skinManager.defaultSource')
+    }
+
+    if(skinEntry.type === 'file'){
+        return Lang.queryJS('settings.skinManager.fileSource', {
+            file: path.basename(skinEntry.path || skinEntry.value)
+        })
+    }
+
+    if(skinEntry.type === 'username'){
+        return Lang.queryJS('settings.skinManager.usernameSource', {
+            username: skinEntry.value
+        })
+    }
+
+    if(skinEntry.type === 'url'){
+        return Lang.queryJS('settings.skinManager.urlSource', {
+            url: skinEntry.value
+        })
+    }
+
+    return Lang.queryJS('settings.skinManager.defaultSource')
+}
+
+async function resolveSkinPreviewURL(account, skinEntry, size = 128){
+    const candidates = skinEntry != null
+        ? SkinManager.resolveEntryAvatarCandidates(skinEntry, size).concat(SkinManager.resolveDefaultAvatarCandidates(account, size))
+        : SkinManager.resolveDefaultAvatarCandidates(account, size)
+    const resolved = await SkinManager.loadFirstImage(candidates)
+    return resolved || SkinManager.LOGO_FALLBACK
+}
 
 /**
  * Add auth account elements for each one stored in the authentication database.
@@ -647,42 +713,41 @@ function populateAuthAccounts(){
     const authAccounts = ConfigManager.getAuthAccounts()
     const authKeys = Object.keys(authAccounts)
     if(authKeys.length === 0){
+        settingsCurrentMicrosoftAccounts.innerHTML = ''
+        settingsCurrentMojangAccounts.innerHTML = ''
+        settingsCurrentOfflineAccounts.innerHTML = ''
         return
     }
-    const selectedUUID = ConfigManager.getSelectedAccount().uuid
+    const selectedAccount = ConfigManager.getSelectedAccount()
+    const selectedUUID = selectedAccount != null ? selectedAccount.uuid : null
 
     let microsoftAuthAccountStr = ''
     let mojangAuthAccountStr = ''
     let offlineAuthAccountStr = ''
+    const skinPreviewJobs = []
+    let imageCounter = 0
 
     authKeys.forEach((val) => {
         const acc = authAccounts[val]
-        const resolvedUUID = acc.uuid != null ? acc.uuid.replace(/-/g, '').trim() : ''
-        const resolvedName = encodeURIComponent((acc.displayName || '').trim())
-        const cacheBuster = Date.now()
-        const primarySkinURL = resolvedUUID.length > 0
-            ? `https://visage.surgeplay.com/bust/128/${resolvedUUID}?cb=${cacheBuster}`
-            : `https://visage.surgeplay.com/bust/128/${resolvedName}?cb=${cacheBuster}`
-        const fallbackSkinURL = resolvedName.length > 0
-            ? `https://visage.surgeplay.com/bust/128/${resolvedName}?cb=${cacheBuster}`
-            : `https://visage.surgeplay.com/front/128/${resolvedUUID}?cb=${cacheBuster}`
-        const finalFallbackSkinURL = resolvedUUID.length > 0
-            ? `https://visage.surgeplay.com/front/128/${resolvedUUID}?cb=${cacheBuster}`
-            : 'assets/images/WaferMCLogo.png'
+        const imageIndex = imageCounter++
+        skinPreviewJobs.push({
+            account: acc,
+            index: imageIndex
+        })
 
         const accHtml = `<div class="settingsAuthAccount" uuid="${acc.uuid}">
             <div class="settingsAuthAccountLeft">
-                <img class="settingsAuthAccountImage" alt="${acc.displayName}" src="${primarySkinURL}" onerror="if(!this.dataset.fallback1){this.dataset.fallback1='1';this.src='${fallbackSkinURL}';}else if(!this.dataset.fallback2){this.dataset.fallback2='1';this.src='${finalFallbackSkinURL}';}else{this.onerror=null;this.src='assets/images/WaferMCLogo.png';}">
+                <img class="settingsAuthAccountImage" data-auth-account-skin="${imageIndex}" alt="${escapeHTML(acc.displayName)}" src="${SkinManager.LOGO_FALLBACK}">
             </div>
             <div class="settingsAuthAccountRight">
                 <div class="settingsAuthAccountDetails">
                     <div class="settingsAuthAccountDetailPane">
                         <div class="settingsAuthAccountDetailTitle">${Lang.queryJS('settings.authAccountPopulate.username')}</div>
-                        <div class="settingsAuthAccountDetailValue">${acc.displayName}</div>
+                        <div class="settingsAuthAccountDetailValue">${escapeHTML(acc.displayName)}</div>
                     </div>
                     <div class="settingsAuthAccountDetailPane">
                         <div class="settingsAuthAccountDetailTitle">${Lang.queryJS('settings.authAccountPopulate.uuid')}</div>
-                        <div class="settingsAuthAccountDetailValue">${acc.uuid}</div>
+                        <div class="settingsAuthAccountDetailValue">${escapeHTML(acc.uuid)}</div>
                     </div>
                 </div>
                 <div class="settingsAuthAccountActions">
@@ -707,7 +772,302 @@ function populateAuthAccounts(){
     settingsCurrentMicrosoftAccounts.innerHTML = microsoftAuthAccountStr
     settingsCurrentMojangAccounts.innerHTML = mojangAuthAccountStr
     settingsCurrentOfflineAccounts.innerHTML = offlineAuthAccountStr
+
+    skinPreviewJobs.forEach((job) => {
+        SkinManager.resolveAccountAvatar(job.account, 128).then((resolvedSkinURL) => {
+            const img = document.querySelector(`img[data-auth-account-skin="${job.index}"]`)
+            if(img != null){
+                img.src = resolvedSkinURL
+            }
+        })
+    })
 }
+
+function buildSkinLibraryEntryMarkup(entry, selected){
+    const removeButton = entry.id === SkinManager.DEFAULT_SKIN_ID
+        ? ''
+        : `<button class="settingsSkinLibraryEntryRemove" data-skin-remove="${escapeHTML(entry.id)}">${Lang.queryJS('settings.skinManager.removeButton')}</button>`
+
+    return `<div class="settingsSkinLibraryEntry" data-skin-entry="${escapeHTML(entry.id)}" ${selected ? 'selected' : ''}>
+        <div class="settingsSkinLibraryEntryPreview" data-skin-preview-index="${entry.index}"></div>
+        <div class="settingsSkinLibraryEntryName">${escapeHTML(entry.name)}</div>
+        <div class="settingsSkinLibraryEntrySource">${escapeHTML(entry.source)}</div>
+        <div class="settingsSkinLibraryEntryActions">
+            <button class="settingsSkinLibraryEntryApply" data-skin-apply="${escapeHTML(entry.id)}" ${selected ? 'selected' : ''}>${selected ? Lang.queryJS('settings.skinManager.selectedButton') : Lang.queryJS('settings.skinManager.applyButton')}</button>
+            ${removeButton}
+        </div>
+    </div>`
+}
+
+function refreshSkinManager(accountUUID = null){
+    const selectedAccount = accountUUID != null
+        ? ConfigManager.getAuthAccount(accountUUID)
+        : ConfigManager.getSelectedAccount()
+
+    if(selectedAccount == null){
+        settingsSkinManagerEmpty.innerHTML = Lang.queryJS('settings.skinManager.emptyAccount')
+        settingsSkinManagerEmpty.style.display = 'block'
+        settingsSkinManagerContent.style.display = 'none'
+        return
+    }
+
+    settingsSkinManagerEmpty.style.display = 'none'
+    settingsSkinManagerContent.style.display = 'flex'
+
+    const selectedSkin = ConfigManager.getAuthAccountSelectedSkin(selectedAccount.uuid)
+    const selectedSkinName = selectedSkin != null ? selectedSkin.label : Lang.queryJS('settings.skinManager.defaultName')
+    settingsSkinManagerPreviewName.innerHTML = escapeHTML(selectedSkinName)
+    settingsSkinManagerPreviewSource.innerHTML = escapeHTML(getSkinSourceLabel(selectedSkin))
+
+    settingsSkinManagerPreviewAvatar.style.backgroundImage = `url('${SkinManager.LOGO_FALLBACK}')`
+    resolveSkinPreviewURL(selectedAccount, selectedSkin, 128).then((previewURL) => {
+        settingsSkinManagerPreviewAvatar.style.backgroundImage = `url('${previewURL}')`
+    })
+
+    const customSkins = ConfigManager.getAuthAccountSkins(selectedAccount.uuid)
+    const selectedSkinId = ConfigManager.getAuthAccountSelectedSkinId(selectedAccount.uuid)
+    const entries = [
+        {
+            index: 0,
+            id: SkinManager.DEFAULT_SKIN_ID,
+            name: Lang.queryJS('settings.skinManager.defaultName'),
+            source: Lang.queryJS('settings.skinManager.defaultSource'),
+            skin: null
+        }
+    ]
+
+    customSkins.forEach((skin, idx) => {
+        entries.push({
+            index: idx + 1,
+            id: skin.id,
+            name: skin.label,
+            source: getSkinSourceLabel(skin),
+            skin
+        })
+    })
+
+    const hasCustomSkins = customSkins.length > 0
+    const emptyLibraryLabel = !hasCustomSkins
+        ? `<div class="settingsSkinManagerLibraryEmpty">${Lang.queryJS('settings.skinManager.emptyLibrary')}</div>`
+        : ''
+
+    settingsSkinManagerLibraryList.innerHTML = emptyLibraryLabel + entries
+        .map((entry) => buildSkinLibraryEntryMarkup(entry, (selectedSkinId == null && entry.id === SkinManager.DEFAULT_SKIN_ID) || selectedSkinId === entry.id))
+        .join('')
+
+    entries.forEach((entry) => {
+        resolveSkinPreviewURL(selectedAccount, entry.skin, 96).then((skinURL) => {
+            const preview = settingsSkinManagerLibraryList.querySelector(`[data-skin-preview-index="${entry.index}"]`)
+            if(preview != null){
+                preview.style.backgroundImage = `url('${skinURL}')`
+            }
+        })
+    })
+
+    Array.from(settingsSkinManagerLibraryList.querySelectorAll('[data-skin-apply]')).forEach((button) => {
+        button.onclick = () => {
+            const targetId = button.getAttribute('data-skin-apply')
+            ConfigManager.setAuthAccountSelectedSkin(
+                selectedAccount.uuid,
+                targetId === SkinManager.DEFAULT_SKIN_ID ? null : targetId
+            )
+            ConfigManager.save()
+            updateSelectedAccount(ConfigManager.getSelectedAccount())
+            refreshSkinManager(selectedAccount.uuid)
+        }
+    })
+
+    Array.from(settingsSkinManagerLibraryList.querySelectorAll('[data-skin-remove]')).forEach((button) => {
+        button.onclick = () => {
+            const targetId = button.getAttribute('data-skin-remove')
+            const skins = ConfigManager.getAuthAccountSkins(selectedAccount.uuid)
+            const target = skins.find((skin) => skin.id === targetId)
+            const nextSkins = skins.filter((skin) => skin.id !== targetId)
+            ConfigManager.setAuthAccountSkins(selectedAccount.uuid, nextSkins)
+
+            if(target?.type === 'file' && typeof target.path === 'string'){
+                const skinDirectory = path.resolve(ConfigManager.getSkinsDirectory())
+                const resolvedTargetPath = path.resolve(target.path)
+                if(resolvedTargetPath.startsWith(skinDirectory + path.sep) && fs.existsSync(resolvedTargetPath)){
+                    fs.removeSync(resolvedTargetPath)
+                }
+            }
+
+            if(ConfigManager.getAuthAccountSelectedSkinId(selectedAccount.uuid) === targetId){
+                ConfigManager.setAuthAccountSelectedSkin(selectedAccount.uuid, null)
+            }
+
+            ConfigManager.save()
+            updateSelectedAccount(ConfigManager.getSelectedAccount())
+            refreshSkinManager(selectedAccount.uuid)
+        }
+    })
+}
+
+async function pushSkinEntryForSelectedAccount(entry){
+    const selectedAccount = ConfigManager.getSelectedAccount()
+    if(selectedAccount == null){
+        return
+    }
+
+    const skins = ConfigManager.getAuthAccountSkins(selectedAccount.uuid)
+    const existing = skins.find((skin) => {
+        if(skin.type !== entry.type){
+            return false
+        }
+
+        if(entry.type === 'file'){
+            return typeof skin.path === 'string' && typeof entry.path === 'string' && skin.path === entry.path
+        }
+
+        return skin.value.toLowerCase() === entry.value.toLowerCase()
+    })
+    if(existing != null){
+        ConfigManager.setAuthAccountSelectedSkin(selectedAccount.uuid, existing.id)
+    } else {
+        skins.push(entry)
+        ConfigManager.setAuthAccountSkins(selectedAccount.uuid, skins)
+        ConfigManager.setAuthAccountSelectedSkin(selectedAccount.uuid, entry.id)
+    }
+
+    ConfigManager.save()
+    updateSelectedAccount(ConfigManager.getSelectedAccount())
+    refreshSkinManager(selectedAccount.uuid)
+}
+
+async function addSkinFromFile(){
+    const selectedAccount = ConfigManager.getSelectedAccount()
+    if(selectedAccount == null){
+        return
+    }
+
+    const res = await remote.dialog.showOpenDialog(remote.getCurrentWindow(), {
+        title: Lang.queryJS('settings.skinManager.fileDialogTitle'),
+        properties: ['openFile'],
+        filters: [
+            { name: Lang.queryJS('settings.skinManager.fileDialogImages'), extensions: ['png', 'jpg', 'jpeg', 'webp'] },
+            { name: Lang.queryJS('settings.fileSelectors.allFiles'), extensions: ['*'] }
+        ]
+    })
+
+    if(res.canceled || res.filePaths.length === 0){
+        return
+    }
+
+    const sourcePath = res.filePaths[0]
+    const extension = path.extname(sourcePath).toLowerCase()
+    const validExtensions = ['.png', '.jpg', '.jpeg', '.webp']
+    if(validExtensions.indexOf(extension) === -1){
+        setOverlayContent(
+            Lang.queryJS('settings.skinManager.invalidFileTitle'),
+            Lang.queryJS('settings.skinManager.invalidFileDesc'),
+            Lang.queryJS('settings.skinManager.okButton')
+        )
+        setOverlayHandler(() => toggleOverlay(false))
+        toggleOverlay(true)
+        return
+    }
+
+    const destinationDir = path.join(ConfigManager.getSkinsDirectory(), selectedAccount.uuid)
+    await fs.ensureDir(destinationDir)
+    const importedName = `${Date.now()}-${crypto.randomBytes(4).toString('hex')}${extension}`
+    const importedPath = path.join(destinationDir, importedName)
+    await fs.copy(sourcePath, importedPath, { overwrite: true })
+
+    await pushSkinEntryForSelectedAccount({
+        id: generateSkinEntryId(),
+        type: 'file',
+        label: path.basename(sourcePath),
+        value: path.basename(sourcePath),
+        path: importedPath,
+        createdAt: Date.now()
+    })
+}
+
+async function addSkinFromUsername(){
+    const username = settingsSkinAddUsernameInput.value.trim()
+    if(!SkinManager.isLikelyValidUsername(username)){
+        setOverlayContent(
+            Lang.queryJS('settings.skinManager.invalidUsernameTitle'),
+            Lang.queryJS('settings.skinManager.invalidUsernameDesc'),
+            Lang.queryJS('settings.skinManager.okButton')
+        )
+        setOverlayHandler(() => toggleOverlay(false))
+        toggleOverlay(true)
+        return
+    }
+
+    await pushSkinEntryForSelectedAccount({
+        id: generateSkinEntryId(),
+        type: 'username',
+        label: username,
+        value: username,
+        createdAt: Date.now()
+    })
+
+    settingsSkinAddUsernameInput.value = ''
+}
+
+async function addSkinFromURL(){
+    const skinURL = settingsSkinAddUrlInput.value.trim()
+    if(!SkinManager.isLikelyHTTPUrl(skinURL)){
+        setOverlayContent(
+            Lang.queryJS('settings.skinManager.invalidURLTitle'),
+            Lang.queryJS('settings.skinManager.invalidURLDesc'),
+            Lang.queryJS('settings.skinManager.okButton')
+        )
+        setOverlayHandler(() => toggleOverlay(false))
+        toggleOverlay(true)
+        return
+    }
+
+    await pushSkinEntryForSelectedAccount({
+        id: generateSkinEntryId(),
+        type: 'url',
+        label: skinURL,
+        value: skinURL,
+        createdAt: Date.now()
+    })
+
+    settingsSkinAddUrlInput.value = ''
+}
+
+function handleSkinManagerUnexpectedError(err){
+    LoggerUtil.getLogger('SettingsSkinManager').error('Unhandled skin manager error.', err)
+    setOverlayContent(
+        Lang.queryJS('settings.skinManager.importFailedTitle'),
+        Lang.queryJS('settings.skinManager.importFailedDesc'),
+        Lang.queryJS('settings.skinManager.okButton')
+    )
+    setOverlayHandler(() => toggleOverlay(false))
+    toggleOverlay(true)
+}
+
+settingsSkinAddFile.onclick = () => {
+    addSkinFromFile().catch(handleSkinManagerUnexpectedError)
+}
+
+settingsSkinAddUsernameButton.onclick = () => {
+    addSkinFromUsername().catch(handleSkinManagerUnexpectedError)
+}
+
+settingsSkinAddUrlButton.onclick = () => {
+    addSkinFromURL().catch(handleSkinManagerUnexpectedError)
+}
+
+settingsSkinAddUsernameInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter'){
+        e.preventDefault()
+        addSkinFromUsername().catch(handleSkinManagerUnexpectedError)
+    }
+})
+
+settingsSkinAddUrlInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter'){
+        e.preventDefault()
+        addSkinFromURL().catch(handleSkinManagerUnexpectedError)
+    }
+})
 
 /**
  * Prepare the accounts tab for display.
@@ -716,6 +1076,7 @@ function prepareAccountsTab() {
     populateAuthAccounts()
     bindAuthAccountSelect()
     bindAuthAccountLogOut()
+    refreshSkinManager()
 }
 
 /**
