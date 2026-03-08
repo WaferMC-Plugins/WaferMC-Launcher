@@ -1,8 +1,9 @@
-const remoteMain = require('@electron/remote/main')
-remoteMain.initialize()
-
 // Requirements
 const { app, BrowserWindow, ipcMain, Menu, shell, nativeImage } = require('electron')
+const remoteMain                        = require('@electron/remote/main')
+if(ipcMain != null){
+    remoteMain.initialize()
+}
 const autoUpdater                       = require('electron-updater').autoUpdater
 const ejse                              = require('ejs-electron')
 const fs                                = require('fs')

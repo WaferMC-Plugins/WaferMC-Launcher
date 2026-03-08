@@ -3,6 +3,8 @@
  */
 // Requirements
 const { URL }                 = require('url')
+const fs                      = require('fs-extra')
+const nodePath                = require('path')
 const {
     MojangRestAPI,
     getServerStatus
@@ -45,6 +47,79 @@ const user_text               = document.getElementById('user_text')
 const skinManagerLandingButton = document.getElementById('skinManagerLandingButton')
 
 const loggerLanding = LoggerUtil.getLogger('Landing')
+const PERSISTENT_INSTANCE_FILES = new Set([
+    'options.txt',
+    'optionsof.txt',
+    'optionsshaders.txt',
+    'servers.dat',
+    'servers.dat_old'
+])
+
+function getActiveDistributionPath(){
+    const launcherDir = ConfigManager.getLauncherDirectory()
+    const devPath = nodePath.join(launcherDir, 'distribution_dev.json')
+    const stablePath = nodePath.join(launcherDir, 'distribution.json')
+
+    if(DistroAPI.isDevMode() && fs.existsSync(devPath)){
+        return devPath
+    }
+    if(fs.existsSync(stablePath)){
+        return stablePath
+    }
+    return devPath
+}
+
+function stripMutableFilesMD5(modules){
+    let stripped = 0
+    for(const mod of (modules || [])){
+        const artifactPath = typeof mod?.artifact?.path === 'string' ? mod.artifact.path : null
+        if(artifactPath != null && mod?.artifact != null){
+            const normalizedPath = artifactPath.replace(/\\/g, '/').toLowerCase()
+            const fileName = normalizedPath.substring(normalizedPath.lastIndexOf('/') + 1)
+            if(PERSISTENT_INSTANCE_FILES.has(fileName) && mod.artifact.MD5 != null){
+                delete mod.artifact.MD5
+                ++stripped
+            }
+        }
+        if(Array.isArray(mod?.subModules) && mod.subModules.length > 0){
+            stripped += stripMutableFilesMD5(mod.subModules)
+        }
+    }
+    return stripped
+}
+
+/**
+ * options.txt and server list are mutable user files and must not be
+ * verified/re-downloaded on every launch.
+ *
+ * @param {string | null} selectedServer
+ */
+function preserveMutableInstanceFiles(selectedServer){
+    if(selectedServer == null){
+        return
+    }
+
+    const distributionPath = getActiveDistributionPath()
+    if(!fs.existsSync(distributionPath)){
+        return
+    }
+
+    try {
+        const distroData = JSON.parse(fs.readFileSync(distributionPath, 'utf8'))
+        const selectedServerData = (distroData.servers || []).find((server) => server.id === selectedServer)
+        if(selectedServerData == null || !Array.isArray(selectedServerData.modules)){
+            return
+        }
+
+        const strippedCount = stripMutableFilesMD5(selectedServerData.modules)
+        if(strippedCount > 0){
+            fs.writeFileSync(distributionPath, JSON.stringify(distroData), 'utf8')
+            loggerLanding.info(`Preserved ${strippedCount} mutable instance file definitions in distribution metadata.`)
+        }
+    } catch(err){
+        loggerLanding.warn('Unable to patch distribution metadata for mutable instance files.', err)
+    }
+}
 
 /**
  * Resolve and set the selected account avatar with fallback providers.
@@ -549,6 +624,7 @@ async function dlAsync(login = true) {
     }
 
     const serv = distro.getServerById(ConfigManager.getSelectedServer())
+    preserveMutableInstanceFiles(ConfigManager.getSelectedServer())
 
     if(login) {
         if(ConfigManager.getSelectedAccount() == null){

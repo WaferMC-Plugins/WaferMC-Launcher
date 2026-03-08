@@ -9,6 +9,7 @@ const { Type }      = require('helios-distribution-types')
 const AuthManager   = require('./assets/js/authmanager')
 const ConfigManager = require('./assets/js/configmanager')
 const { DistroAPI } = require('./assets/js/distromanager')
+const loggerUIBinder = LoggerUtil.getLogger('UIBinder')
 
 let rscShouldLoad = false
 let fatalStartupError = false
@@ -155,6 +156,16 @@ async function showMainUI(data){
     }).catch((err) => {
         console.error('[UIBinder] initNews failed:', err)
     })
+}
+
+async function showMainUIWithGuard(data){
+    try {
+        await showMainUI(data)
+    } catch(err){
+        loggerUIBinder.error('Fatal startup error while preparing main UI.', err)
+        fatalStartupError = true
+        showFatalStartupError()
+    }
 }
 
 function showFatalStartupError(){
@@ -486,7 +497,7 @@ document.addEventListener('readystatechange', async () => {
             rscShouldLoad = false
             if(!fatalStartupError){
                 const data = await DistroAPI.getDistribution()
-                await showMainUI(data)
+                await showMainUIWithGuard(data)
             } else {
                 showFatalStartupError()
             }
@@ -502,7 +513,7 @@ ipcRenderer.on('distributionIndexDone', async (event, res) => {
         syncModConfigurations(data)
         ensureJavaSettings(data)
         if(document.readyState === 'interactive' || document.readyState === 'complete'){
-            await showMainUI(data)
+            await showMainUIWithGuard(data)
         } else {
             rscShouldLoad = true
         }
