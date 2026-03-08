@@ -3222,7 +3222,10 @@ input:checked + .toggleSwitchSlider:before {
 /* Maintains maximum width on the status bar. */
 #server_status_wrapper {
     display: inline-flex;
-    width: 75px;
+    align-items: center;
+    width: auto;
+    min-width: 95px;
+    white-space: nowrap;
 }
 
 /* Span which displays the player count of the selected server. */
@@ -3231,22 +3234,27 @@ input:checked + .toggleSwitchSlider:before {
     font-size: 8px;
     font-weight: 900;
     text-shadow: 0px 0px 20px #949494;
-    margin-left: 10px;
+    margin-left: 8px;
+    white-space: nowrap;
 }
 
 /* Wrapper container for the mojang status bar. */
 #mojangStatusWrapper {
     position: relative;
-    display: flex;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
     cursor: pointer;
 }
 
 /* Icon which displays the status of the mojang services. */
 #mojang_status_icon {
-    font-size: 30px;
+    font-size: 22px;
+    line-height: 1;
     color: #848484;
-    margin-left: 15px;
+    margin-left: 10px;
     font-family: 'sans-serif';
+    transform: translateY(-1px);
 }
 
 /* Tooltip which displays more details about the mojang statuses. */
