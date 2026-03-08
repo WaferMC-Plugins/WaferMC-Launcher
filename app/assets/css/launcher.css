@@ -1675,6 +1675,223 @@ input:checked + .toggleSwitchSlider:before {
     opacity: 1;
 }
 
+#settingsSkinManagerInner {
+    width: 100%;
+}
+
+#settingsSkinManagerEmpty {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 20px;
+}
+
+#settingsSkinManagerContent {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+#settingsSkinManagerPreview {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(126, 126, 126, 0.57);
+    border-radius: 3px;
+    padding: 10px;
+}
+
+#settingsSkinManagerPreviewAvatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-color: rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+}
+
+#settingsSkinManagerPreviewMeta {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+#settingsSkinManagerPreviewName {
+    font-size: 13px;
+    font-family: 'Avenir Medium';
+    overflow-wrap: anywhere;
+}
+
+#settingsSkinManagerPreviewSource {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.75);
+    margin-top: 4px;
+    overflow-wrap: anywhere;
+}
+
+#settingsSkinManagerActions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.settingsSkinManagerInlineAction {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.settingsSkinManagerInput {
+    width: 100%;
+    min-width: 0;
+    padding: 8px 10px;
+    border-radius: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(0, 0, 0, 0.25);
+    color: white;
+    font-family: 'Avenir Book';
+}
+
+.settingsSkinManagerInput:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.55);
+}
+
+.settingsSkinManagerActionButton {
+    border: 1px solid rgba(255, 255, 255, 0.32);
+    background: rgba(255, 255, 255, 0.06);
+    color: white;
+    border-radius: 3px;
+    padding: 6px 10px;
+    font-family: 'Avenir Medium';
+    cursor: pointer;
+    transition: 0.2s ease;
+    white-space: nowrap;
+}
+
+.settingsSkinManagerActionButton:hover,
+.settingsSkinManagerActionButton:focus {
+    border-color: rgba(255, 255, 255, 0.72);
+    background: rgba(255, 255, 255, 0.14);
+    outline: none;
+}
+
+.settingsSkinManagerActionButton:active {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+#settingsSkinManagerLibrary {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+#settingsSkinManagerLibraryTitle {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+#settingsSkinManagerLibraryList {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+    gap: 10px;
+}
+
+.settingsSkinLibraryEntry {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(126, 126, 126, 0.57);
+    border-radius: 3px;
+    padding: 10px;
+}
+
+.settingsSkinLibraryEntry[selected] {
+    border-color: rgba(122, 217, 140, 0.85);
+    box-shadow: 0px 0px 14px rgba(122, 217, 140, 0.35);
+}
+
+.settingsSkinLibraryEntryPreview {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+.settingsSkinLibraryEntryName {
+    font-size: 12px;
+    font-family: 'Avenir Medium';
+    overflow-wrap: anywhere;
+}
+
+.settingsSkinLibraryEntrySource {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.75);
+    overflow-wrap: anywhere;
+}
+
+.settingsSkinLibraryEntryActions {
+    display: flex;
+    gap: 6px;
+}
+
+.settingsSkinLibraryEntryApply,
+.settingsSkinLibraryEntryRemove {
+    flex: 1;
+    border-radius: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.32);
+    font-size: 11px;
+    padding: 4px 6px;
+    cursor: pointer;
+    transition: 0.2s ease;
+    background: rgba(255, 255, 255, 0.06);
+    color: white;
+    font-family: 'Avenir Medium';
+}
+
+.settingsSkinLibraryEntryApply[selected] {
+    background: rgba(122, 217, 140, 0.2);
+    border-color: rgba(122, 217, 140, 0.8);
+    color: rgb(169, 241, 184);
+    cursor: default;
+}
+
+.settingsSkinLibraryEntryApply:hover:not([selected]),
+.settingsSkinLibraryEntryApply:focus:not([selected]) {
+    border-color: rgba(255, 255, 255, 0.72);
+    background: rgba(255, 255, 255, 0.14);
+    outline: none;
+}
+
+.settingsSkinLibraryEntryRemove {
+    border-color: rgba(241, 55, 55, 0.75);
+    color: rgb(241, 55, 55);
+    background: rgba(241, 55, 55, 0.07);
+}
+
+.settingsSkinLibraryEntryRemove:hover,
+.settingsSkinLibraryEntryRemove:focus {
+    border-color: rgb(241, 55, 55);
+    background: rgba(241, 55, 55, 0.2);
+    outline: none;
+}
+
+.settingsSkinManagerLibraryEmpty {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.65);
+    border: 1px dashed rgba(255, 255, 255, 0.25);
+    border-radius: 3px;
+    padding: 10px;
+}
+
 /* * *
 * Settings View (Minecraft Tab)
 * * */
@@ -2887,6 +3104,34 @@ input:checked + .toggleSwitchSlider:before {
     border-radius: 14px;
     margin-top: 0px;
     z-index: 35;
+}
+
+#skinManagerLandingButton {
+    position: absolute;
+    top: 150px;
+    left: 70px;
+    min-width: 92px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.42);
+    background: rgba(0, 0, 0, 0.35);
+    color: white;
+    font-size: 11px;
+    font-family: 'Avenir Medium';
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    outline: none;
+    z-index: 35;
+    transition: 0.2s ease;
+}
+#skinManagerLandingButton:hover,
+#skinManagerLandingButton:focus {
+    border-color: rgba(255, 255, 255, 0.8);
+    background: rgba(0, 0, 0, 0.55);
+}
+#skinManagerLandingButton:active {
+    border-color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.8);
 }
 
 /* Logo container styles w/ update. */

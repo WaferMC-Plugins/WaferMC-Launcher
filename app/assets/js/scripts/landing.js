@@ -31,6 +31,7 @@ const child_process           = require('child_process')
 // Internal Requirements
 const DiscordWrapper          = require('./assets/js/discordwrapper')
 const ProcessBuilder          = require('./assets/js/processbuilder')
+const SkinManager             = require('./assets/js/skinmanager')
 
 // Launch Elements
 const launch_content          = document.getElementById('launch_content')
@@ -41,61 +42,23 @@ const launch_details_text     = document.getElementById('launch_details_text')
 const launch_button           = document.getElementById('launch_button')
 const server_selection_button = document.getElementById('server_selection_button')
 const user_text               = document.getElementById('user_text')
+const skinManagerLandingButton = document.getElementById('skinManagerLandingButton')
 
 const loggerLanding = LoggerUtil.getLogger('Landing')
 
 /**
- * Normalize UUID values for skin endpoints.
- *
- * @param {string} uuid
- * @returns {string}
- */
-function normalizeUUID(uuid){
-    return uuid != null ? uuid.replace(/-/g, '').trim() : ''
-}
-
-/**
- * Load the first valid image URL from the provided candidates.
- *
- * @param {string[]} urls
- * @returns {Promise<string | null>}
- */
-function loadFirstImage(urls){
-    return new Promise((resolve) => {
-        const attempt = (idx) => {
-            if(idx >= urls.length){
-                resolve(null)
-                return
-            }
-
-            const img = new Image()
-            img.onload = () => resolve(urls[idx])
-            img.onerror = () => attempt(idx + 1)
-            img.src = urls[idx]
-        }
-        attempt(0)
-    })
-}
-
-/**
  * Resolve and set the selected account avatar with fallback providers.
  *
- * @param {string} uuid
+ * @param {Object | null} authUser
  */
-function setSelectedAccountAvatar(uuid){
+function setSelectedAccountAvatar(authUser){
     const avatarContainer = document.getElementById('avatarContainer')
-    const resolvedUUID = normalizeUUID(uuid)
-    if(resolvedUUID.length === 0){
+    if(authUser == null){
         avatarContainer.style.backgroundImage = 'none'
         return
     }
 
-    const avatarCandidates = [
-        `https://mc-heads.net/avatar/${resolvedUUID}/128`,
-        `https://crafatar.com/avatars/${resolvedUUID}?overlay=true&size=128`
-    ]
-
-    loadFirstImage(avatarCandidates).then((resolvedURL) => {
+    SkinManager.resolveAccountAvatar(authUser, 128).then((resolvedURL) => {
         avatarContainer.style.backgroundImage = resolvedURL != null ? `url('${resolvedURL}')` : 'none'
     })
 }
@@ -237,12 +200,27 @@ document.getElementById('settingsMediaButton').onclick = async e => {
     switchView(getCurrentView(), VIEWS.settings)
 }
 
-// Bind avatar overlay button.
-document.getElementById('avatarOverlay').onclick = async e => {
+async function openSkinManagerFromLanding(){
     await prepareSettings()
     switchView(getCurrentView(), VIEWS.settings, 500, 500, () => {
         settingsNavItemListener(document.getElementById('settingsNavAccount'), false)
+        const skinManagerContainer = document.getElementById('settingsSkinManagerContainer')
+        if(skinManagerContainer != null){
+            skinManagerContainer.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            })
+        }
     })
+}
+
+// Bind avatar overlay button.
+document.getElementById('avatarOverlay').onclick = async e => {
+    await openSkinManagerFromLanding()
+}
+
+skinManagerLandingButton.onclick = async () => {
+    await openSkinManagerFromLanding()
 }
 
 // Bind selected account
@@ -252,11 +230,7 @@ function updateSelectedAccount(authUser){
         if(authUser.displayName != null){
             username = authUser.displayName
         }
-        if(authUser.uuid != null){
-            setSelectedAccountAvatar(authUser.uuid)
-        } else {
-            setSelectedAccountAvatar(null)
-        }
+        setSelectedAccountAvatar(authUser)
     } else {
         setSelectedAccountAvatar(null)
     }
